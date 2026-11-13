@@ -194,28 +194,35 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
     try {
       const tok = await tokenizeCard(card);
       const payment = { token: tok.token, bin: tok.bin, brand, installments: plan.installments };
-      const res = pendingOrder
+      const createOrder = () =>
+        fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customer,
+            items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })),
+            shipping: {
+              optionId: option?.id,
+              cp: prefs.cp,
+              branchId,
+              address: option?.service === "domicilio" ? address : undefined,
+            },
+            coupon: coupon?.code,
+            payment,
+          }),
+        });
+      let res = pendingOrder
         ? await fetch("/api/checkout/pay", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...pendingOrder, payment }),
           })
-        : await fetch("/api/checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              customer,
-              items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })),
-              shipping: {
-                optionId: option?.id,
-                cp: prefs.cp,
-                branchId,
-                address: option?.service === "domicilio" ? address : undefined,
-              },
-              coupon: coupon?.code,
-              payment,
-            }),
-          });
+        : await createOrder();
+      // Si el pedido anterior ya no existe (p. ej. modo demo en otro servidor), se crea de nuevo
+      if (pendingOrder && res.status === 404) {
+        setPendingOrder(null);
+        res = await createOrder();
+      }
       const data = await res.json();
 
       if (data.code === "CART_CHANGED" || data.code === "OUT_OF_STOCK") {
@@ -229,7 +236,7 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
         setShippingPrefs({ optionId: null });
         // Limpiar los datos de la tarjeta del estado antes de salir
         setCard({ number: "", holderName: "", expMonth: "", expYear: "", cvv: "", holderDni: "" });
-        router.push(`/checkout/confirmacion/${data.number}?t=${data.accessToken}${createAccount ? "&cuenta=1" : ""}`);
+        router.push(`/checkout/confirmacion/${data.number}?t=${data.accessToken}${createAccount ? "&cuenta=1" : ""}${data.receipt ? `&r=${data.receipt}` : ""}`);
         return;
       }
       if (data.number && data.accessToken) setPendingOrder({ number: data.number, accessToken: data.accessToken });

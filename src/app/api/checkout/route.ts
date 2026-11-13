@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { signReceipt } from "@/lib/orders/demo-receipt";
+import { hasSupabase } from "@/lib/supabase/clients";
 import { getLiveVariants } from "@/lib/orders/live";
 import { createOrder, findCoupon, OrderError, validateCart, type ShippingChoice } from "@/lib/orders/orders";
 import { allowedInstallments, CARD_BRANDS, payOrder, type PaymentInput } from "@/lib/orders/pay";
@@ -142,6 +144,8 @@ export async function POST(req: NextRequest) {
       total: paid.total,
       paymentStatus: paid.paymentStatus,
       message,
+      // Modo demo: comprobante firmado para la página de confirmación (ver demo-receipt.ts)
+      receipt: !hasSupabase && paid.paymentStatus !== "rechazado" ? signReceipt(paid) : undefined,
     });
   } catch (e) {
     if (e instanceof OrderError) return NextResponse.json({ ok: false, code: e.code, message: e.message }, { status: 409 });

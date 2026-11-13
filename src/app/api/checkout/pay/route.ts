@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { signReceipt } from "@/lib/orders/demo-receipt";
+import { hasSupabase } from "@/lib/supabase/clients";
 import { getOrder } from "@/lib/orders/orders";
 import { payOrder, type PaymentInput } from "@/lib/orders/pay";
 
@@ -19,5 +21,6 @@ export async function POST(req: NextRequest) {
     total: paid.total,
     paymentStatus: paid.paymentStatus,
     message,
+    receipt: !hasSupabase && paid.paymentStatus !== "rechazado" ? signReceipt(paid) : undefined,
   });
 }

@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import { PurchaseTracker } from "@/components/analytics/PurchaseTracker";
 import { getSettings } from "@/lib/data/layout";
 import { formatPrice, whatsappLink } from "@/lib/format";
+import { readReceipt } from "@/lib/orders/demo-receipt";
 import { getOrder } from "@/lib/orders/orders";
+import { hasSupabase } from "@/lib/supabase/clients";
 
 export const metadata: Metadata = { title: "Pedido confirmado", robots: { index: false } };
 
@@ -21,7 +23,8 @@ const BRAND_LABEL: Record<string, string> = {
 export default async function ConfirmationPage({ params, searchParams }: PageProps<"/checkout/confirmacion/[numero]">) {
   const [{ numero }, sp, settings] = await Promise.all([params, searchParams, getSettings()]);
   const token = typeof sp.t === "string" ? sp.t : "";
-  const order = await getOrder(numero, token);
+  // Modo demo: si esta instancia no tiene el pedido en memoria, se usa el comprobante firmado
+  const order = (await getOrder(numero, token)) ?? (!hasSupabase && typeof sp.r === "string" ? readReceipt(sp.r, numero) : null);
   if (!order) notFound();
 
   const pending = order.paymentStatus === "pendiente";
