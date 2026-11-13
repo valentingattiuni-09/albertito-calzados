@@ -1,0 +1,92 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+/* La tienda es siempre clara (manual de marca): sin modo oscuro. */
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: var(--header-h, 9rem);
+}
+
+body {
+  background: #ffffff;
+  color: #213681;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+/* Foco visible y consistente en todo el sitio */
+:focus-visible {
+  outline: 3px solid #213681;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.on-dark :focus-visible,
+.on-dark:focus-visible {
+  outline-color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Sección activa en la barra (la marca <ActiveSection> en cada página) */
+html[data-active-section="hombre"] header [data-section="hombre"]::after {
+  scale: 1;
+}
+html[data-active-section="mujer"] header [data-section="mujer"]::after {
+  scale: 1;
+}
+html[data-active-section="ninos"] header [data-section="ninos"]::after {
+  scale: 1;
+}
+html[data-active-section="alpargatas"] header [data-section="alpargatas"]::after {
+  scale: 1;
+}
+html[data-active-section="ofertas"] header [data-section="ofertas"]::after {
+  scale: 1;
+}
+
+/* En la ficha (mobile) el botón de WhatsApp sube para no tapar la barra de compra */
+@media (max-width: 1023px) {
+  body:has([data-sticky-buy]) .wa-fab {
+    bottom: 5.5rem;
+  }
+  body:has([data-sticky-buy]) footer {
+    padding-bottom: 5rem;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
