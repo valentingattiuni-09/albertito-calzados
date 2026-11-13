@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { noIndex, siteUrl as getSiteUrl } from "@/lib/site";
 
 // Fuentes de marca alojadas en el proyecto (Google Fonts, licencia OFL): no dependen de fonts.googleapis.com
 const poppins = localFont({
@@ -22,7 +23,7 @@ const archivoBlack = localFont({
   src: [{ path: "../fonts/archivo-black-400.woff2", weight: "400", style: "normal" }],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -32,6 +33,7 @@ export const metadata: Metadata = {
   },
   description:
     "Calzado para toda la familia desde 1977. Zapatillas, sandalias, botas y alpargatas con cuotas sin interés y envíos a todo el país.",
+  ...(noIndex() ? { robots: { index: false, follow: false } } : {}),
   openGraph: {
     type: "website",
     locale: "es_AR",

@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { noIndex, siteUrl } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = siteUrl();
   // Sitios de prueba (preview de Vercel) no se indexan
-  const isProduction = process.env.VERCEL_ENV ? process.env.VERCEL_ENV === "production" : true;
+  const isProduction = !noIndex() && (process.env.VERCEL_ENV ? process.env.VERCEL_ENV === "production" : true);
   return {
     rules: isProduction
       ? [{ userAgent: "*", allow: "/", disallow: ["/admin", "/api", "/checkout", "/cuenta", "/buscar"] }]

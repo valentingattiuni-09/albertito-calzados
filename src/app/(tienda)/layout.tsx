@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
 import { getPaymentPromos, getSettings } from "@/lib/data/layout";
+import { hasSupabase } from "@/lib/supabase/clients";
 
 export default async function TiendaLayout({ children }: LayoutProps<"/">) {
   const [{ newsletterPopup }, promos] = await Promise.all([getSettings(), getPaymentPromos()]);
@@ -17,6 +18,11 @@ export default async function TiendaLayout({ children }: LayoutProps<"/">) {
       >
         Saltar al contenido
       </a>
+      {!hasSupabase && (
+        <p className="bg-blanco px-4 py-1.5 text-center text-xs font-medium text-azul">
+          Versión de prueba: los pagos y los envíos son simulados. No se cobra nada.
+        </p>
+      )}
       <SiteHeader />
       <main id="contenido" className="flex-1">
         {children}

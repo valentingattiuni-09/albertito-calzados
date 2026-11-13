@@ -5,6 +5,7 @@ import { ActiveSection } from "@/components/layout/ActiveSection";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductView } from "@/components/product/ProductView";
 import { getCatalog, getProductBySlug } from "@/lib/data/catalog";
+import { siteUrl as getSiteUrl } from "@/lib/site";
 import { getNavigation, getPaymentPromos, getSettings } from "@/lib/data/layout";
 import type { NavSection, NavSubsection, ProductDetail } from "@/lib/data/types";
 
@@ -60,7 +61,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
   const groupId = sub?.id ?? section?.id;
   const related = catalog.filter((x) => x.id !== p.id && groupId && x.categoryIds.includes(groupId)).slice(0, 8);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = getSiteUrl();
   const inStock = p.variants.some((v) => v.stock > 0);
   const jsonLd = {
     "@context": "https://schema.org",

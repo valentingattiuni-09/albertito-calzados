@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { siteUrl as getSiteUrl } from "@/lib/site";
 
 export type Crumb = { name: string; href: string };
 
 /** Breadcrumb visible + datos estructurados BreadcrumbList. */
 export function Breadcrumb({ items }: { items: Crumb[] }) {
   const all = [{ name: "Inicio", href: "/" }, ...items];
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = getSiteUrl();
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
