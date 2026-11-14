@@ -14,6 +14,7 @@ const config: Config = {
         blanco: "#FFFFFF",
         azul: "#213681",
         "gris-tinta": "#5B6478",
+        whatsapp: { DEFAULT: "#25D366", oscuro: "#1EBE5D" },
       },
       fontFamily: {
         sans: ["var(--font-poppins)", "system-ui", "sans-serif"],

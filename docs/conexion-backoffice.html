@@ -1,0 +1,228 @@
+<title>Conexión back office Albertito</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna de lectura; el esquema de las dos partes arriba, después las 3 conexiones como fichas, el contrato de datos y los pasos */
+:root{
+  --rojo:#E93136; --azul:#213681;
+  --bg:#ffffff; --fg:#213681; --muted:#5B6478; --soft:#f3f5fb; --line:#dde2f0; --chip:#fdeced; --chipfg:#b8222a; --code:#f6f7fb;
+  --display:"Archivo Black","Arial Black",system-ui,sans-serif;
+  --body:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10142a; --fg:#e8ecfa; --muted:#a7b0c8; --soft:#182044; --line:#2a3360; --chip:#3a1820; --chipfg:#ff8a8e; --azul:#8fa3ff; --code:#0b0f22; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10142a; --fg:#e8ecfa; --muted:#a7b0c8; --soft:#182044; --line:#2a3360; --chip:#3a1820; --chipfg:#ff8a8e; --azul:#8fa3ff; --code:#0b0f22; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6}
+.wrap{max-width:860px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:44px}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:4px solid var(--rojo);padding-bottom:24px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--rojo)}
+h1,h2{font-family:var(--display);font-weight:400;text-transform:uppercase;line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,6vw,46px)}
+h2{font-size:clamp(22px,4vw,28px)}
+h3{font-size:18px;font-weight:700;margin:0}
+p{margin:0}
+.lead{font-size:18px;color:var(--muted);max-width:62ch}
+section{display:flex;flex-direction:column;gap:16px}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px}
+nav.toc a{font-size:14px;font-weight:600;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+nav.toc a:hover,nav.toc a:focus-visible{border-color:var(--rojo);outline:none}
+.split{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch}
+.side{border:2px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.side.bo{border-color:var(--azul)}
+.side.fr{border-color:var(--rojo)}
+.side h3{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:20px}
+.side .who{font-size:13px;color:var(--muted);font-weight:600}
+.side ul{font-size:15px}
+.arrows{display:flex;flex-direction:column;justify-content:center;gap:10px;font-size:13px;font-weight:600;color:var(--muted);text-align:center}
+.arrows span{white-space:nowrap}
+@media (max-width:680px){.split{grid-template-columns:1fr}.arrows{flex-direction:row;flex-wrap:wrap;justify-content:center}}
+ul,ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+li::marker{color:var(--rojo);font-weight:700}
+code{font-family:var(--mono);font-size:13.5px;background:var(--code);border:1px solid var(--line);border-radius:4px;padding:1px 6px;word-break:break-word}
+pre{margin:0;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.55}
+pre code{background:none;border:0;padding:0;font-size:inherit}
+.card{border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px}
+.dir{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 10px;background:var(--soft);color:var(--azul)}
+.cards{display:flex;flex-direction:column;gap:14px}
+.note{border-left:4px solid var(--rojo);background:var(--chip);padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px}
+.note b{color:var(--chipfg)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:560px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td code{white-space:nowrap}
+.muted{color:var(--muted);font-size:15px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Albertito Calzados · Guía para el programador</span>
+  <h1>Cómo conectar su back office con la web</h1>
+  <p class="lead">Esta web es solo la vidriera (el front). Productos, precios, stock y pedidos se manejan en el back office de ustedes, y la web los muestra.</p>
+</header>
+
+<nav class="toc" aria-label="Índice">
+  <a href="#idea">La idea</a><a href="#conexiones">Las 3 conexiones</a><a href="#contrato">Qué datos necesita la web</a><a href="#seguridad">Seguridad</a><a href="#pasos">Pasos</a><a href="#preguntas">Qué necesito de ustedes</a>
+</nav>
+
+<section id="idea">
+  <h2>La idea</h2>
+  <div class="split">
+    <div class="side bo">
+      <h3>Su back office</h3>
+      <span class="who">Lo que ya tienen · manda en los datos</span>
+      <ul>
+        <li>Productos, fotos, colores y talles</li>
+        <li>Precios, ofertas y stock</li>
+        <li>Categorías</li>
+        <li>Banners y promos de cuotas</li>
+        <li>Pedidos: recibirlos, prepararlos, despacharlos</li>
+      </ul>
+    </div>
+    <div class="arrows" aria-hidden="true">
+      <span>datos →</span>
+      <span>← pedidos</span>
+      <span>aviso de cambio →</span>
+    </div>
+    <div class="side fr">
+      <h3>Esta web (front)</h3>
+      <span class="who">Lo que hicimos acá · muestra y vende</span>
+      <ul>
+        <li>Inicio, catálogo, filtros y buscador</li>
+        <li>Ficha de producto y cuotas</li>
+        <li>Carrito, favoritos y checkout</li>
+        <li>Cobro con tarjeta y cotización de envío</li>
+        <li>“Seguí tu pedido”</li>
+      </ul>
+    </div>
+  </div>
+  <p>La web no guarda productos propios: cada vez que necesita mostrar algo, se lo pide al back office. Si cambian un precio allá, se ve acá. El panel <code>/admin</code> que trae la web queda apagado o, si prefieren, solo para lo que su back office no maneje (por ejemplo banners).</p>
+</section>
+
+<section id="conexiones">
+  <h2>Las 3 conexiones</h2>
+  <div class="cards">
+    <article class="card">
+      <div class="head"><h3>1. La web lee los datos</h3><span class="dir">Web → back office</span></div>
+      <p>Su back office expone una API de lectura (ver la tabla de abajo). La web la llama desde su servidor, nunca desde el navegador del cliente, y guarda una copia por unos minutos para que la tienda ande rápido aunque haya mucho tráfico.</p>
+      <p class="muted">De su lado: crear esos endpoints. Del mío: hacer el adaptador que convierte su formato al de la web. Si su API ya existe con otro formato, me adapto yo.</p>
+    </article>
+
+    <article class="card">
+      <div class="head"><h3>2. El back office avisa que algo cambió</h3><span class="dir">Back office → web</span></div>
+      <p>Cuando guardan un cambio, su back office hace una llamada corta a la web y la web borra su copia de ese dato, así el cambio se ve al instante. Este endpoint ya está hecho:</p>
+<pre><code>POST https://&lt;dominio-de-la-web&gt;/api/revalidate
+x-revalidate-secret: &lt;CLAVE_AVISO&gt;
+Content-Type: application/json
+
+{ "table": "products", "record": { "slug": "zapatilla-urbana-negra" } }</code></pre>
+      <p class="muted">Valores de <code>table</code>: <code>products</code>, <code>categories</code>, <code>home_banners</code>, <code>payment_promos</code>, <code>topbar_messages</code>, <code>settings</code>. Si no mandan el aviso igual funciona: la web se actualiza sola cada pocos minutos (categorías y datos del local, cada algunas horas).</p>
+    </article>
+
+    <article class="card">
+      <div class="head"><h3>3. La web manda los pedidos</h3><span class="dir">Web → back office</span></div>
+      <p>Cuando alguien compra, la web:</p>
+      <ol>
+        <li>Le pregunta al back office si hay stock de cada talle y color (o reserva el stock).</li>
+        <li>Cobra con la tarjeta (Payway).</li>
+        <li>Le manda el pedido completo al back office: cliente, productos, envío, pago y total.</li>
+      </ol>
+      <p>Desde ahí el pedido lo maneja su back office: descuenta stock, lo prepara y lo despacha. Para “Seguí tu pedido”, la web le pregunta el estado y el número de seguimiento al back office.</p>
+    </article>
+  </div>
+</section>
+
+<section id="contrato">
+  <h2>Qué datos necesita la web</h2>
+  <p>Este es el formato que propongo. Si su API devuelve otra cosa no hay problema: me pasan un ejemplo y lo adapto.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Endpoint en su back office</th><th>Para qué lo usa la web</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET /productos</code></td><td>Catálogo, filtros, buscador e inicio. Con paginado y filtro por categoría.</td></tr>
+      <tr><td><code>GET /productos/:slug</code></td><td>La ficha completa: fotos por color, talles con stock, descripción.</td></tr>
+      <tr><td><code>GET /categorias</code></td><td>El menú (Mujer, Hombre, Niños… y sus subcategorías).</td></tr>
+      <tr><td><code>GET /banners</code></td><td>El carrusel del inicio.</td></tr>
+      <tr><td><code>GET /promos</code></td><td>Cuotas sin interés y mensajes de la barra azul.</td></tr>
+      <tr><td><code>POST /stock/verificar</code></td><td>Antes de cobrar: confirmar que lo del carrito sigue disponible.</td></tr>
+      <tr><td><code>POST /pedidos</code></td><td>Crear el pedido después del pago.</td></tr>
+      <tr><td><code>GET /pedidos/:numero</code></td><td>Estado y seguimiento para el cliente.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Ejemplo de un producto</h3>
+<pre><code>{
+  "id": "123",
+  "slug": "zapatilla-urbana-negra",
+  "nombre": "Zapatilla Urbana",
+  "descripcion": "Capellada de cuero, suela de goma.",
+  "linea": "seleccion",              // "seleccion" o "diario"
+  "categorias": ["mujer", "zapatillas"],
+  "precio": 59000,                   // precio de lista, en pesos
+  "precio_oferta": 47200,            // null si no está en oferta
+  "nuevo": true,
+  "destacado": false,
+  "peso_g": 900,                     // para cotizar el envío
+  "colores": [
+    {
+      "nombre": "Negro", "hex": "#1f1f1f",
+      "fotos": ["https://fotos.su-dominio.com/123-negro-1.jpg",
+                "https://fotos.su-dominio.com/123-negro-2.jpg"],
+      "talles": [
+        { "talle": "36", "sku": "ZU-NEG-36", "stock": 3 },
+        { "talle": "37", "sku": "ZU-NEG-37", "stock": 0 }
+      ]
+    }
+  ]
+}</code></pre>
+
+  <h3>Ejemplo de pedido que la web les manda</h3>
+<pre><code>POST /pedidos
+{
+  "numero": "ALB-001234",
+  "cliente": { "nombre": "Ana", "apellido": "Pérez", "email": "…", "telefono": "…", "dni": "…" },
+  "entrega": { "tipo": "domicilio", "empresa": "andreani", "direccion": "…", "cp": "5730", "costo": 6500 },
+  "items": [ { "sku": "ZU-NEG-36", "cantidad": 1, "precio": 47200 } ],
+  "pago": { "medio": "visa", "cuotas": 3, "estado": "aprobado", "id_transaccion": "…" },
+  "total": 53700
+}</code></pre>
+</section>
+
+<section id="seguridad">
+  <h2>Seguridad</h2>
+  <ul>
+    <li>Todo por <b>HTTPS</b> y de servidor a servidor. Las claves nunca llegan al navegador del cliente.</li>
+    <li><b>Una clave para cada sentido</b>: una que la web usa para llamar a su back office (header <code>Authorization: Bearer …</code>) y otra para el aviso de cambios. Se guardan como variables de entorno, no en el código.</li>
+    <li>La API de lectura puede ser solo de lectura. La única escritura que hace la web es crear pedidos.</li>
+    <li>Las fotos quedan en su servidor o CDN. Me pasan el dominio y lo agrego a la lista de permitidos de la web.</li>
+  </ul>
+</section>
+
+<section id="pasos">
+  <h2>Pasos</h2>
+  <ol>
+    <li><b>Ustedes</b> me pasan la documentación de su API o un ejemplo de respuesta de productos, categorías y pedidos.</li>
+    <li><b>Yo</b> hago el adaptador en la web y apago la carga de productos del panel <code>/admin</code>.</li>
+    <li><b>Juntos</b> definimos las URLs y generamos las claves de cada lado.</li>
+    <li><b>Su programador</b> agrega el aviso de cambios al guardar en el back office.</li>
+    <li><b>Probamos</b> en una versión de prueba: cambiar un precio, ver que aparece; hacer una compra de prueba, ver que llega el pedido.</li>
+    <li><b>Publicamos</b> con el dominio real.</li>
+  </ol>
+  <div class="note"><p><b>Si su back office no puede exponer una API</b>, hay otra opción que ya está hecha: su back office le manda cada cambio a la web por la API de la web (<code>/api/admin/v1</code>, documentada en <code>docs/API.md</code>). Funciona, pero hay dos copias de los datos que tienen que mantenerse iguales, por eso es la segunda opción.</p></div>
+</section>
+
+<section id="preguntas">
+  <h2>Qué necesito de ustedes</h2>
+  <ol>
+    <li>¿En qué está hecho su back office y tiene API? Documentación o ejemplos de respuesta.</li>
+    <li>¿Dónde están las fotos de los productos (dominio)?</li>
+    <li>¿Los banners y promos de cuotas los cargan en su back office o los dejamos en el panel de la web?</li>
+    <li>¿Quién cobra: la web con Payway y les avisa, o su sistema?</li>
+    <li>¿Quién cotiza y genera los envíos con Andreani y Correo Argentino: la web o su back office?</li>
+    <li>¿Cómo identifican cada talle y color (SKU)? Es la llave para el stock y los pedidos.</li>
+  </ol>
+</section>
+</div>

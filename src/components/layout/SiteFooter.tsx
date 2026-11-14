@@ -81,7 +81,7 @@ export async function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`WhatsApp ${whatsapp.display}`}
-                className="flex size-11 items-center justify-center rounded-full border border-blanco/40 hover:bg-white/10"
+                className="flex size-11 items-center justify-center rounded-full bg-whatsapp text-blanco hover:bg-whatsapp-oscuro"
               >
                 <WhatsAppIcon size={20} />
               </a>

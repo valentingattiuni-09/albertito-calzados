@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Contacto", description: "Escribinos 
 export default async function ContactPage() {
   const { store, whatsapp } = await getSettings();
   const items = [
-    { icon: <WhatsAppIcon size={22} />, label: `WhatsApp ${whatsapp.display}`, href: whatsappLink(whatsapp.number, "¡Hola! Tengo una consulta.") },
+    { icon: <WhatsAppIcon size={22} className="text-whatsapp" />, label: `WhatsApp ${whatsapp.display}`, href: whatsappLink(whatsapp.number, "¡Hola! Tengo una consulta.") },
     { icon: <InstagramIcon size={22} />, label: `@${store.instagram}`, href: `https://instagram.com/${store.instagram}` },
     { icon: <PinIcon size={22} />, label: `${store.address}, ${store.city}, ${store.province}`, href: `https://maps.google.com/?q=${encodeURIComponent(`${store.address}, ${store.city}, ${store.province}`)}` },
     { icon: <ClockIcon size={22} />, label: store.hoursDetail, href: null },

@@ -112,7 +112,7 @@ export function MobileMenu({ sections, settings }: { sections: NavSection[]; set
                   rel="noopener noreferrer"
                   className="flex min-h-11 items-center gap-3 font-medium"
                 >
-                  <WhatsAppIcon size={20} /> Escribinos por WhatsApp
+                  <WhatsAppIcon size={20} className="text-whatsapp" /> Escribinos por WhatsApp
                 </a>
               </li>
             </ul>

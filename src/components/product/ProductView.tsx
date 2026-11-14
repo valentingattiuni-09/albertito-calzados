@@ -250,7 +250,7 @@ export function ProductView({ product: p, promos, initialColor, whatsappNumber, 
             href={whatsappLink(whatsappNumber, waText)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 flex h-12 items-center justify-center gap-2 rounded-md border-2 border-azul text-sm font-semibold hover:bg-azul hover:text-blanco"
+            className="mt-3 flex h-12 items-center justify-center gap-2 rounded-md bg-whatsapp text-sm font-bold text-blanco hover:bg-whatsapp-oscuro"
           >
             <WhatsAppIcon size={20} /> Consultá por WhatsApp
           </a>

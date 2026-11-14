@@ -39,7 +39,7 @@ export default async function AccountPage() {
             href={whatsappLink(whatsapp.number, "¡Hola! Tengo una consulta sobre mi pedido.")}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 flex h-12 items-center justify-center gap-2 rounded-md border-2 border-azul text-sm font-bold uppercase"
+            className="mt-5 flex h-12 items-center justify-center gap-2 rounded-md bg-whatsapp text-sm font-bold uppercase text-blanco hover:bg-whatsapp-oscuro"
           >
             <WhatsAppIcon size={20} /> Consultá por WhatsApp
           </a>
