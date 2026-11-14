@@ -1,12 +1,12 @@
-/** Formato de moneda argentina: "$ 59.000" (punto de miles, sin decimales). */
+/** Formato de moneda argentina: "$ 59.000" (punto de miles, sin decimales). El espacio no se corta de línea. */
 export function formatPrice(value: number): string {
   const n = Math.round(value);
-  return `$ ${n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+  return `$\u00a0${n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 }
 
-/** "Visa 3 S/I" */
+/** "Visa 3 cuotas sin interés" */
 export function promoShortLabel(p: { label: string; installments: number; interestFree: boolean }): string {
-  return `${p.label} ${p.installments}${p.interestFree ? " S/I" : " cuotas"}`;
+  return `${p.label} ${p.installments} ${p.interestFree ? "cuotas sin interés" : "cuotas"}`;
 }
 
 /** Link de WhatsApp con mensaje precargado. */

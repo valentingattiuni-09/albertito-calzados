@@ -5,7 +5,7 @@ import type { PaymentPromo } from "@/lib/data/types";
 import { formatPrice } from "@/lib/format";
 import { installmentOptions } from "@/lib/pricing";
 
-/** Cuotas en la ficha: "Hasta 5 S/I", lista de opciones y modal con todos los medios de pago. */
+/** Cuotas en la ficha: "Hasta 5 cuotas sin interés", lista de opciones y modal con todos los medios de pago. */
 export function PaymentsInfo({ price, promos }: { price: number; promos: PaymentPromo[] }) {
   const options = installmentOptions(price, promos);
   if (options.length === 0) return null;
@@ -19,7 +19,7 @@ export function PaymentsInfo({ price, promos }: { price: number; promos: Payment
       <ul className="mt-2 space-y-1 text-sm">
         {options.map((o) => (
           <li key={o.promo.id}>
-            {o.installments} S/I de {formatPrice(o.amount)} con {o.promo.label}
+            {o.installments} cuotas sin interés de {formatPrice(o.amount)} con {o.promo.label}
           </li>
         ))}
       </ul>
@@ -36,7 +36,7 @@ export function PaymentsInfo({ price, promos }: { price: number; promos: Payment
                 {p.minAmount > 0 && <p className="text-xs text-gris-tinta">Compra mínima {formatPrice(p.minAmount)}</p>}
               </div>
               <p className="text-right text-sm font-bold">
-                {p.installments} {p.interestFree ? "S/I" : "cuotas"}
+                {p.installments} {p.interestFree ? "cuotas sin interés" : "cuotas"}
                 {price >= p.minAmount && (
                   <span className="block font-normal">de {formatPrice(Math.ceil(price / p.installments))}</span>
                 )}

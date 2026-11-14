@@ -113,7 +113,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/pedi
           </div>
           <p className="text-xs text-gris-tinta">
             Pago {o.paymentStatus}
-            {o.lastPayment && ` · ${o.lastPayment.cardBrand ?? ""} ${o.lastPayment.installments > 1 ? `${o.lastPayment.installments} cuotas S/I` : "1 pago"}`}
+            {o.lastPayment && ` · ${o.lastPayment.cardBrand ?? ""} ${o.lastPayment.installments > 1 ? `${o.lastPayment.installments} cuotas sin interés` : "1 pago"}`}
           </p>
         </dl>
       </section>

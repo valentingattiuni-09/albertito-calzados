@@ -151,7 +151,7 @@ export function PromosManager({ promos, topbar }: { promos: AdminPromo[]; topbar
               <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">
-                    {p.label} {p.installments} {p.interestFree ? "S/I" : "cuotas"}
+                    {p.label} {p.installments} {p.interestFree ? "cuotas sin interés" : "cuotas"}
                   </p>
                   <p className="text-xs text-gris-tinta">
                     {p.minAmount > 0 ? `Desde ${formatPrice(p.minAmount)}` : "Sin mínimo"}

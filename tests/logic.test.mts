@@ -47,10 +47,11 @@ const card = (p: Partial<ProductCard>): ProductCard => ({
 
 describe("formato de precios", () => {
   it("usa punto de miles y sin decimales", () => {
-    assert.equal(formatPrice(59000), "$ 59.000");
-    assert.equal(formatPrice(1234567), "$ 1.234.567");
-    assert.equal(formatPrice(999), "$ 999");
-    assert.equal(formatPrice(12345.6), "$ 12.346");
+    // Espacio que no se corta (el "$" nunca queda separado del número)
+    assert.equal(formatPrice(59000), "$\u00a059.000");
+    assert.equal(formatPrice(1234567), "$\u00a01.234.567");
+    assert.equal(formatPrice(999), "$\u00a0999");
+    assert.equal(formatPrice(12345.6), "$\u00a012.346");
   });
 });
 

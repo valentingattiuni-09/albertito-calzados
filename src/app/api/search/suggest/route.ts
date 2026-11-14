@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
         image: p.images[0] ?? null,
         price: formatPrice(p.price),
         basePrice: p.onSale ? formatPrice(p.basePrice) : null,
-        installments: cuota ? `${cuota.installments} S/I de ${formatPrice(cuota.amount)}` : null,
+        installments: cuota ? `${cuota.installments} cuotas sin interés de ${formatPrice(cuota.amount)}` : null,
       };
     }),
   };

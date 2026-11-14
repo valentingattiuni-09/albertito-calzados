@@ -78,7 +78,7 @@ export function ProductCard({
 
           {cuota && (
             <p className="mt-0.5 text-[13px] font-medium text-azul">
-              {cuota.installments} S/I de {formatPrice(cuota.amount)}
+              {cuota.installments} cuotas sin interés de {formatPrice(cuota.amount)}
             </p>
           )}
 

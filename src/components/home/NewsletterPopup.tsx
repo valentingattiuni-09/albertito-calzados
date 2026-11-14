@@ -18,6 +18,9 @@ function hiddenUntil(): number {
   }
 }
 
+/** ?newsletter=1 en la URL lo muestra siempre (para mostrarlo en una demo aunque ya se haya cerrado). */
+const forced = () => new URLSearchParams(window.location.search).get("newsletter") === "1";
+
 function hideFor30Days() {
   try {
     localStorage.setItem(KEY, String(Date.now() + DAYS_HIDDEN * 86400000));
@@ -36,15 +39,15 @@ export function NewsletterPopup({ title, text, delaySeconds }: { title: string; 
   const [done, setDone] = useState(false);
   const open = useCallback(() => {
     const skip = SKIP.some((p) => window.location.pathname.startsWith(p));
-    if (shown.current || skip || Date.now() < hiddenUntil()) return;
+    if (shown.current || skip || (!forced() && Date.now() < hiddenUntil())) return;
     if (document.querySelector("dialog[open]")) return; // no tapar otro modal
     shown.current = true;
     ref.current?.showModal();
   }, []);
 
   useEffect(() => {
-    if (Date.now() < hiddenUntil()) return;
-    const t = setTimeout(open, Math.max(2, delaySeconds) * 1000);
+    if (!forced() && Date.now() < hiddenUntil()) return;
+    const t = setTimeout(open, forced() ? 1000 : Math.max(2, delaySeconds) * 1000);
     // Intención de salida: el mouse sale por arriba de la ventana (solo con mouse)
     const onLeave = (e: MouseEvent) => {
       if (e.clientY <= 0 && !e.relatedTarget && window.matchMedia("(hover: hover)").matches) open();
