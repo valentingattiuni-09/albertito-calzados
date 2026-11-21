@@ -57,11 +57,14 @@ export type DemoProduct = {
 
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => String(from + i));
 
+/** Alpargatas: niños del 28 al 36 y adultos del 37 al 46. */
+const ALPARGATA_SIZES = { ninos: range(28, 36), adultos: range(37, 46) };
+
 const SIZES = {
   hombre: range(39, 45),
   mujer: range(35, 40),
   ninos: range(26, 35),
-  alpargatas: range(35, 45),
+  alpargatas: range(28, 46),
 };
 
 // ---------------------------------------------------------------------------
@@ -94,7 +97,13 @@ const sectionDefs: {
   {
     slug: "alpargatas",
     name: "Alpargatas",
-    subs: [["reforzada-clasica", "Reforzada clásica"], ["reforzada-premium", "Reforzada premium"], ["pvc", "PVC"]],
+    subs: [
+      ["ninos", "Niños"],
+      ["adultos", "Adultos"],
+      ["reforzada-clasica", "Reforzada clásica"],
+      ["reforzada-premium", "Reforzada premium"],
+      ["reforzada-pvc", "Reforzada PVC"],
+    ],
     promo: ["Todos los colores, todos los talles", "/alpargatas"],
   },
   { slug: "ofertas", name: "Ofertas", subs: [] },
@@ -122,7 +131,8 @@ export const demoCategories: DemoCategory[] = sectionDefs.flatMap((s, i) => {
     slug,
     kind: "subsection",
     order: j,
-    sizeRange,
+    // En alpargatas, Niños y Adultos tienen su propia numeración
+    sizeRange: s.slug === "alpargatas" && (slug === "ninos" || slug === "adultos") ? ALPARGATA_SIZES[slug] : sizeRange,
     menuPromoTitle: null,
     menuPromoLink: null,
     menuPromoImage: null,
@@ -159,6 +169,8 @@ type Seed = {
   isNew?: boolean;
   featured?: boolean;
   material?: string;
+  /** Solo alpargatas: define la numeración y la subsección Niños/Adultos. */
+  age?: keyof typeof ALPARGATA_SIZES;
 };
 
 const seeds: Record<keyof typeof SIZES, Seed[]> = {
@@ -210,15 +222,12 @@ const seeds: Record<keyof typeof SIZES, Seed[]> = {
     { name: "Guillermina colegial Pizarrón", sub: "colegial", price: 37900, colors: ["negro", "azul"] },
   ],
   alpargatas: [
-    { name: "Alpargata reforzada clásica", sub: "reforzada-clasica", price: 12900, colors: ["negro", "azul", "rojo", "beige"], featured: true },
-    { name: "Alpargata reforzada clásica estampada", sub: "reforzada-clasica", price: 14900, colors: ["azul", "rojo", "verde"], isNew: true },
-    { name: "Alpargata reforzada clásica lisa", sub: "reforzada-clasica", price: 11900, colors: ["negro", "gris", "bordo"], offerPct: 15 },
-    { name: "Alpargata reforzada premium cuero", sub: "reforzada-premium", price: 24900, colors: ["negro", "suela"], line: "seleccion", material: "Lona con puntera de cuero" },
-    { name: "Alpargata reforzada premium gaucha", sub: "reforzada-premium", price: 22900, colors: ["negro", "azul", "beige"], line: "seleccion", isNew: true },
-    { name: "Alpargata reforzada premium suela doble", sub: "reforzada-premium", price: 21900, colors: ["negro", "marron"], offerPct: 20 },
-    { name: "Alpargata PVC lluvia", sub: "pvc", price: 9900, colors: ["negro", "azul", "rojo"], isNew: true },
-    { name: "Alpargata PVC campo", sub: "pvc", price: 10900, colors: ["negro", "verde"] },
-    { name: "Alpargata PVC trabajo", sub: "pvc", price: 11900, colors: ["negro", "gris"], offerPct: 10 },
+    { name: "Alpargata Reforzada clásica", sub: "reforzada-clasica", age: "adultos", price: 12900, colors: ["negro", "azul", "rojo", "beige"], featured: true },
+    { name: "Alpargata Reforzada clásica niños", sub: "reforzada-clasica", age: "ninos", price: 9900, colors: ["azul", "rojo", "verde"], isNew: true },
+    { name: "Alpargata Reforzada premium", sub: "reforzada-premium", age: "adultos", price: 22900, colors: ["negro", "azul", "beige"], line: "seleccion", material: "Lona reforzada con puntera de cuero" },
+    { name: "Alpargata Reforzada premium niños", sub: "reforzada-premium", age: "ninos", price: 17900, colors: ["negro", "azul"], line: "seleccion", isNew: true },
+    { name: "Alpargata Reforzada PVC", sub: "reforzada-pvc", age: "adultos", price: 10900, colors: ["negro", "verde"], offerPct: 10, material: "Lona con suela de PVC" },
+    { name: "Alpargata Reforzada PVC niños", sub: "reforzada-pvc", age: "ninos", price: 8900, colors: ["negro", "azul", "rojo"], offerPct: 15, material: "Lona con suela de PVC" },
   ],
 };
 
@@ -247,7 +256,7 @@ export const demoProducts: DemoProduct[] = (Object.keys(seeds) as (keyof typeof 
       hex: PALETTE[c][1],
       order: ci,
     }));
-    const sizes = SIZES[section];
+    const sizes = s.age ? ALPARGATA_SIZES[s.age] : SIZES[section];
     const variants: DemoVariant[] = colors.flatMap((c) =>
       sizes.map((size) => {
         const r = rand(`${key}:${c.slug}:${size}`);
@@ -267,6 +276,7 @@ export const demoProducts: DemoProduct[] = (Object.keys(seeds) as (keyof typeof 
     ]);
     const sectionCat = demoCategories.find((c) => c.slug === section && c.parentId === null)!;
     const subCat = demoCategories.find((c) => c.slug === s.sub && c.parentId === sectionCat.id)!;
+    const ageCat = s.age ? demoCategories.find((c) => c.slug === s.age && c.parentId === sectionCat.id) : undefined;
     return {
       id,
       name: s.name,
@@ -275,7 +285,7 @@ export const demoProducts: DemoProduct[] = (Object.keys(seeds) as (keyof typeof 
       description: `${s.name}: cómoda, liviana y lista para todos los días. Probala, caminá y decidí.`,
       specs: {
         Material: s.material ?? "Sintético",
-        Suela: section === "alpargatas" ? "Yute con refuerzo de goma" : "Goma",
+        Suela: section === "alpargatas" ? (s.sub === "reforzada-pvc" ? "PVC" : "Yute con refuerzo de goma") : "Goma",
         Origen: "Argentina",
       },
       line: s.line ?? "diario",
@@ -284,8 +294,8 @@ export const demoProducts: DemoProduct[] = (Object.keys(seeds) as (keyof typeof 
       isOffer: Boolean(s.offerPct),
       isNew: Boolean(s.isNew),
       isFeatured: Boolean(s.featured),
-      weightG: section === "alpargatas" ? 450 : section === "ninos" ? 600 : 1000,
-      categoryIds: [sectionCat.id, subCat.id],
+      weightG: section === "alpargatas" ? (s.age === "ninos" ? 300 : 450) : section === "ninos" ? 600 : 1000,
+      categoryIds: [sectionCat.id, subCat.id, ...(ageCat ? [ageCat.id] : [])],
       colors,
       variants,
       images,

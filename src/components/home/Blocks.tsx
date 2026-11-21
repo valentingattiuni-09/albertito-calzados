@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CardIcon, ChevronRightIcon, InstagramIcon, SwapIcon, TruckIcon } from "@/components/ui/icons";
+import { PaymentLogo } from "@/components/ui/PaymentLogo";
 import type { NavSection, PaymentPromo } from "@/lib/data/types";
 import { formatPrice } from "@/lib/format";
 
@@ -34,14 +35,23 @@ export function SectionTitle({
 /** Fila de beneficios (sale de las promos activas). */
 export function BenefitsRow({ promos }: { promos: PaymentPromo[] }) {
   // Agrupa por cantidad de cuotas: "3 S/I con Visa, Mastercard y Tarjeta Verde"
-  const groups = new Map<number, string[]>();
+  const groups = new Map<number, PaymentPromo[]>();
   promos
     .filter((p) => p.interestFree && p.installments > 1)
-    .forEach((p) => groups.set(p.installments, [...(groups.get(p.installments) ?? []), p.label]));
-  const join = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} y ${xs.at(-1)}` : xs[0]);
+    .forEach((p) => groups.set(p.installments, [...(groups.get(p.installments) ?? []), p]));
 
-  const items = [
-    ...[...groups].sort((a, b) => b[0] - a[0]).map(([n, labels]) => ({ icon: <CardIcon />, title: `${n} cuotas sin interés`, text: `con ${join(labels)}` })),
+  const items: { icon: React.ReactNode; title: string; text: React.ReactNode }[] = [
+    ...[...groups].sort((a, b) => b[0] - a[0]).map(([n, ps]) => ({
+      icon: <CardIcon />,
+      title: `${n} cuotas sin interés`,
+      text: (
+        <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {ps.map((p) => (
+            <PaymentLogo key={p.id} provider={p.provider} logoUrl={p.logoUrl} label={p.label} className="h-4" compact textClassName="text-xs font-semibold" />
+          ))}
+        </span>
+      ),
+    })),
     { icon: <TruckIcon />, title: "Envíos a todo el país", text: "Andreani y Correo Argentino" },
     { icon: <SwapIcon />, title: "Cambiá gratis en el local", text: "Edison 15, Villa Mercedes" },
   ];
@@ -103,11 +113,7 @@ export function PaymentPromosBlock({ promos }: { promos: PaymentPromo[] }) {
         {promos.map((p) => (
           <li key={p.id} className="flex flex-col justify-between rounded-lg border border-azul/15 p-4 sm:p-5">
             <div className="flex h-8 items-center">
-              {p.logoUrl ? (
-                <Image src={p.logoUrl} alt={p.label} width={96} height={32} className="h-8 w-auto object-contain" />
-              ) : (
-                <span className="text-base font-bold">{p.label}</span>
-              )}
+              <PaymentLogo provider={p.provider} logoUrl={p.logoUrl} label={p.label} className="h-8" textClassName="text-base font-bold" />
             </div>
             <p className="mt-4">
               <span className="font-campana text-4xl leading-none text-rojo">{p.installments}</span>

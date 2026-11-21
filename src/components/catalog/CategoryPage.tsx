@@ -37,7 +37,7 @@ export async function CategoryPage({
   return (
     <div className="mx-auto max-w-tienda px-4 py-6 lg:px-6">
       <ActiveSection slug={section.slug} />
-      <Breadcrumb items={crumbs} />
+      <Breadcrumb accent items={crumbs} />
 
       {banner && (
         <picture className="mt-4 block overflow-hidden rounded-lg">
@@ -47,7 +47,7 @@ export async function CategoryPage({
       )}
 
       <div className="mt-4 flex items-baseline gap-3">
-        <h1 className={`text-2xl font-bold uppercase sm:text-3xl ${isOffers ? "text-rojo" : ""}`}>
+        <h1 className="text-2xl font-bold uppercase text-rojo sm:text-3xl">
           {sub ? `${section.name} · ${sub.name}` : section.name}
         </h1>
         <span className="text-sm text-gris-tinta lg:hidden">

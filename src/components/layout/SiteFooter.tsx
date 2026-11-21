@@ -1,3 +1,5 @@
+import { PaymentLogo } from "@/components/ui/PaymentLogo";
+import { paymentLogo } from "@/lib/payment-logos";
 import Image from "next/image";
 import Link from "next/link";
 import { ClockIcon, InstagramIcon, PinIcon, WhatsAppIcon } from "@/components/ui/icons";
@@ -161,9 +163,16 @@ export async function SiteFooter() {
           <div>
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.15em]">Medios de pago</p>
             <ul className="flex flex-wrap gap-2" aria-label="Medios de pago">
-              {promos.map((p) => (
-                <Mark key={p.id} label={p.label} />
-              ))}
+              {promos.map((p) =>
+                paymentLogo(p.provider, p.logoUrl) ? (
+                  // Logo sobre fondo blanco para que se lea sobre el azul
+                  <li key={p.id} className="flex h-9 items-center rounded-md bg-blanco px-3">
+                    <PaymentLogo provider={p.provider} logoUrl={p.logoUrl} label={p.label} className="h-5" />
+                  </li>
+                ) : (
+                  <Mark key={p.id} label={p.label} />
+                ),
+              )}
               <Mark label="Débito" />
             </ul>
           </div>

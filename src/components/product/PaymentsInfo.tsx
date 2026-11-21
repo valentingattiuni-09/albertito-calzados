@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/ui/Modal";
+import { PaymentLogo } from "@/components/ui/PaymentLogo";
 import type { PaymentPromo } from "@/lib/data/types";
 import { formatPrice } from "@/lib/format";
 import { installmentOptions } from "@/lib/pricing";
@@ -18,8 +19,11 @@ export function PaymentsInfo({ price, promos }: { price: number; promos: Payment
       </p>
       <ul className="mt-2 space-y-1 text-sm">
         {options.map((o) => (
-          <li key={o.promo.id}>
-            {o.installments} cuotas sin interés de {formatPrice(o.amount)} con {o.promo.label}
+          <li key={o.promo.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span>
+              {o.installments} cuotas sin interés de {formatPrice(o.amount)} con
+            </span>
+            <PaymentLogo provider={o.promo.provider} logoUrl={o.promo.logoUrl} label={o.promo.label} className="h-4" compact />
           </li>
         ))}
       </ul>
@@ -32,7 +36,7 @@ export function PaymentsInfo({ price, promos }: { price: number; promos: Payment
           {promos.map((p) => (
             <li key={p.id} className="flex items-center justify-between gap-4 py-3">
               <div>
-                <p className="font-semibold">{p.label}</p>
+                <PaymentLogo provider={p.provider} logoUrl={p.logoUrl} label={p.label} className="h-6" textClassName="font-semibold" />
                 {p.minAmount > 0 && <p className="text-xs text-gris-tinta">Compra mínima {formatPrice(p.minAmount)}</p>}
               </div>
               <p className="text-right text-sm font-bold">

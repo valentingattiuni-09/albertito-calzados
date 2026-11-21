@@ -3,8 +3,8 @@ import { siteUrl as getSiteUrl } from "@/lib/site";
 
 export type Crumb = { name: string; href: string };
 
-/** Breadcrumb visible + datos estructurados BreadcrumbList. */
-export function Breadcrumb({ items }: { items: Crumb[] }) {
+/** Breadcrumb visible + datos estructurados BreadcrumbList. `accent`: la página actual en rojo (secciones del catálogo). */
+export function Breadcrumb({ items, accent = false }: { items: Crumb[]; accent?: boolean }) {
   const all = [{ name: "Inicio", href: "/" }, ...items];
   const siteUrl = getSiteUrl();
   const jsonLd = {
@@ -26,7 +26,7 @@ export function Breadcrumb({ items }: { items: Crumb[] }) {
           return (
             <li key={c.href} className="flex items-center gap-1">
               {last ? (
-                <span aria-current="page" className="font-medium text-azul">
+                <span aria-current="page" className={`font-medium ${accent ? "text-rojo" : "text-azul"}`}>
                   {c.name}
                 </span>
               ) : (

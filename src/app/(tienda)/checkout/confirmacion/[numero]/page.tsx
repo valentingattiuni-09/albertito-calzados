@@ -1,3 +1,4 @@
+import { PaymentLogo } from "@/components/ui/PaymentLogo";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -101,8 +102,15 @@ export default async function ConfirmationPage({ params, searchParams }: PagePro
             <dd className="text-xl">{formatPrice(order.total)}</dd>
           </div>
           {order.lastPayment && (
-            <p className="text-right text-xs text-gris-tinta">
-              {BRAND_LABEL[order.lastPayment.cardBrand ?? ""] ?? "Tarjeta"} ·{" "}
+            <p className="flex flex-wrap items-center justify-end gap-x-1.5 text-right text-xs text-gris-tinta">
+              <PaymentLogo
+                provider={order.lastPayment.cardBrand ?? ""}
+                label={BRAND_LABEL[order.lastPayment.cardBrand ?? ""] ?? "Tarjeta"}
+                className="h-4"
+                textClassName=""
+                compact
+              />{" "}
+              ·{" "}
               {order.lastPayment.installments > 1
                 ? `${order.lastPayment.installments} cuotas sin interés de ${formatPrice(Math.ceil(order.total / order.lastPayment.installments))}`
                 : "1 pago"}

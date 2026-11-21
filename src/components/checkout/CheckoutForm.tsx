@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useState } from "react";
 import { syncCart } from "@/components/cart/CartDrawer";
+import { PaymentLogo } from "@/components/ui/PaymentLogo";
 import { ShippingQuoter, type QuoteState } from "@/components/shipping/ShippingQuoter";
 import { analytics } from "@/lib/analytics";
 import { setShippingPrefs, useShippingPrefs } from "@/lib/cart/shipping-store";
@@ -19,13 +20,13 @@ const PROVINCES = [
   "Santiago del Estero", "Tierra del Fuego", "Tucumán",
 ];
 
-const BRANDS: { id: string; label: string }[] = [
-  { id: "visa", label: "Visa" },
-  { id: "master", label: "Mastercard" },
+const BRANDS: { id: string; label: string; tag?: string }[] = [
+  { id: "visa", label: "Visa", tag: "Crédito" },
+  { id: "master", label: "Mastercard", tag: "Crédito" },
   { id: "naranja", label: "Naranja" },
   { id: "tarjeta_verde", label: "Tarjeta Verde" },
-  { id: "visa_debito", label: "Visa Débito" },
-  { id: "master_debito", label: "Maestro / Master Débito" },
+  { id: "visa_debito", label: "Visa Débito", tag: "Débito" },
+  { id: "master_debito", label: "Maestro / Master Débito", tag: "Débito" },
 ];
 
 type Customer = { email: string; firstName: string; lastName: string; dni: string; phone: string };
@@ -423,7 +424,8 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
                   {BRANDS.map((b) => (
                     <label
                       key={b.id}
-                      className="flex min-h-12 cursor-pointer items-center justify-center rounded-md border border-azul/25 px-2 text-center text-sm font-semibold has-[:checked]:border-azul has-[:checked]:bg-azul has-[:checked]:text-blanco"
+                      // Seleccionada: borde grueso (los logos necesitan fondo blanco)
+                      className="flex min-h-14 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md border border-azul/25 bg-blanco px-2 py-1.5 text-center text-sm font-semibold has-[:checked]:border-azul has-[:checked]:ring-2 has-[:checked]:ring-azul"
                     >
                       <input
                         type="radio"
@@ -436,7 +438,8 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
                         }}
                         className="sr-only"
                       />
-                      {b.label}
+                      <PaymentLogo provider={b.id} label={b.label} className="h-6" />
+                      {b.tag && <span className="text-[11px] font-medium uppercase tracking-wide text-gris-tinta">{b.tag}</span>}
                     </label>
                   ))}
                 </div>
@@ -596,8 +599,11 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
             <dd className="text-2xl font-bold">{formatPrice(total)}</dd>
           </div>
           {plan.installments > 1 && (
-            <p className="text-right text-sm font-medium">
-              {plan.installments} cuotas sin interés de {formatPrice(Math.ceil(total / plan.installments))}
+            <p className="flex flex-wrap items-center justify-end gap-x-2 text-right text-sm font-medium">
+              <span>
+                {plan.installments} cuotas sin interés de {formatPrice(Math.ceil(total / plan.installments))}
+              </span>
+              <PaymentLogo provider={brand} label={BRANDS.find((b) => b.id === brand)?.label ?? ""} className="h-4" compact />
             </p>
           )}
         </dl>

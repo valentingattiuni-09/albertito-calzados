@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { PaymentPromo, ProductCard as Card } from "@/lib/data/types";
 import { formatPrice } from "@/lib/format";
-import { bestInstallment } from "@/lib/pricing";
+import { PaymentLogo } from "@/components/ui/PaymentLogo";
+import { installmentOptions } from "@/lib/pricing";
 import { FavoriteButton } from "./FavoriteButton";
 
 export function LineBadge({ line, className = "" }: { line: Card["line"]; className?: string }) {
@@ -30,7 +31,10 @@ export function ProductCard({
   priority?: boolean;
   sizes?: string;
 }) {
-  const cuota = bestInstallment(p.price, promos);
+  const options = installmentOptions(p.price, promos);
+  const cuota = options[0] ?? null;
+  // Tarjetas que dan esa misma cantidad de cuotas (ej. Visa y Mastercard en 3)
+  const cuotaPromos = cuota ? options.filter((o) => o.installments === cuota.installments).map((o) => o.promo) : [];
   const href = `/producto/${p.slug}`;
   const [img1, img2] = p.images;
 
@@ -77,9 +81,14 @@ export function ProductCard({
           </div>
 
           {cuota && (
-            <p className="mt-0.5 text-[13px] font-medium text-azul">
-              {cuota.installments} cuotas sin interés de {formatPrice(cuota.amount)}
-            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] font-medium text-azul">
+              <span>
+                {cuota.installments} cuotas sin interés de {formatPrice(cuota.amount)}
+              </span>
+              {cuotaPromos.map((pr) => (
+                <PaymentLogo key={pr.id} provider={pr.provider} logoUrl={pr.logoUrl} label={pr.label} className="h-3.5" compact textClassName="text-xs font-semibold" />
+              ))}
+            </div>
           )}
 
           {p.colors.length > 0 && (

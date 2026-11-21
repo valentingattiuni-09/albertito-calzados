@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PaymentLogo } from "@/components/ui/PaymentLogo";
 import { ShippingQuoter, type QuoteState } from "@/components/shipping/ShippingQuoter";
 import { CloseIcon, MinusIcon, PlusIcon } from "@/components/ui/icons";
 import { useShippingPrefs } from "@/lib/cart/shipping-store";
@@ -201,8 +202,11 @@ export function CartDrawer({ promos }: { promos: PaymentPromo[] }) {
                   <dd className="text-xl font-bold">{formatPrice(total)}</dd>
                 </div>
                 {cuota && (
-                  <p className="text-right text-sm font-medium">
-                    {cuota.installments} cuotas sin interés de {formatPrice(cuota.amount)}
+                  <p className="flex flex-wrap items-center justify-end gap-x-2 text-right text-sm font-medium">
+                    <span>
+                      {cuota.installments} cuotas sin interés de {formatPrice(cuota.amount)} con
+                    </span>
+                    <PaymentLogo provider={cuota.promo.provider} logoUrl={cuota.promo.logoUrl} label={cuota.promo.label} className="h-4" compact />
                   </p>
                 )}
               </dl>
