@@ -57,14 +57,14 @@ export type DemoProduct = {
 
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => String(from + i));
 
-/** Alpargatas: niños del 28 al 36 y adultos del 37 al 46. */
-const ALPARGATA_SIZES = { ninos: range(28, 36), adultos: range(37, 46) };
+/** Alpargatas: niños del 25 al 36 y adultos del 37 al 46. */
+const ALPARGATA_SIZES = { ninos: range(25, 36), adultos: range(37, 46) };
 
 const SIZES = {
   hombre: range(39, 45),
   mujer: range(35, 40),
   ninos: range(26, 35),
-  alpargatas: range(28, 46),
+  alpargatas: range(25, 46),
 };
 
 // ---------------------------------------------------------------------------
