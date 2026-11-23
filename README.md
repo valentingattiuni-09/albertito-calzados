@@ -2,6 +2,12 @@
 
 Next.js (App Router) + TypeScript + Tailwind + Supabase. Pisá fuerte. Caminá feliz.
 
+## Para el programador: conectar el back office
+
+Empezá por **[docs/CONEXION-BACKOFFICE.md](docs/CONEXION-BACKOFFICE.md)**: qué hace esta web, qué necesita del back office y dónde se toca el código. La API que ya trae la web está en [docs/API.md](docs/API.md).
+
+Demo publicada: https://albertito-calzados.vercel.app (pagos y envíos simulados).
+
 ## Correr en local
 
 ```bash
@@ -9,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Abrí http://localhost:3000.
+Abrí http://localhost:3000. Requiere Node 20 o más nuevo.
 
 Si no hay variables de Supabase, la tienda arranca en **modo demo** y usa el catálogo de `src/lib/demo/catalog.ts`. Así se puede probar todo sin base de datos.
 
