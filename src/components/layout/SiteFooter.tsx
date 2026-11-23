@@ -174,6 +174,8 @@ export async function SiteFooter() {
                 ),
               )}
               <Mark label="Débito" />
+              <Mark label="Pago Fácil" />
+              <Mark label="Rapipago" />
             </ul>
           </div>
           <div>

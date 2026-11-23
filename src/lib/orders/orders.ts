@@ -108,7 +108,13 @@ export type OrderView = {
   paymentStatus: "pendiente" | "aprobado" | "rechazado";
   createdAt: string;
   items: OrderItemView[];
-  lastPayment: { installments: number; cardBrand: string | null; interestFree: boolean } | null;
+  lastPayment: {
+    installments: number;
+    cardBrand: string | null;
+    interestFree: boolean;
+    /** Pago en efectivo (Pago Fácil / Rapipago): código y vencimiento del cupón */
+    voucher?: { code: string; expiresAt: string } | null;
+  } | null;
 };
 
 export class OrderError extends Error {
@@ -222,7 +228,7 @@ export async function recordPayment(
   order: OrderView,
   providerId: string,
   result: PaymentResult,
-  meta: { amount: number; installments: number; interestFree: boolean; cardBrand: string },
+  meta: { amount: number; installments: number; interestFree: boolean; cardBrand: string; voucher?: { code: string; expiresAt: string } | null },
 ): Promise<OrderView> {
   if (hasSupabase) {
     const { error } = await serviceClient().rpc("confirm_payment", {
@@ -253,7 +259,7 @@ export async function recordPayment(
     ...current,
     paymentStatus: result.status,
     status: result.status === "aprobado" ? "pagado" : current.status,
-    lastPayment: { installments: meta.installments, cardBrand: meta.cardBrand, interestFree: meta.interestFree },
+    lastPayment: { installments: meta.installments, cardBrand: meta.cardBrand, interestFree: meta.interestFree, voucher: meta.voucher ?? null },
   };
   demoOrders.set(order.id, updated);
   console.info(`[pedido:demo] ${order.number} pago ${result.status}`);
@@ -286,7 +292,7 @@ type OrderRow = {
   payment_status: OrderView["paymentStatus"];
   created_at: string;
   order_items: { product_name: string; color_name: string | null; size: string; sku: string; image_url: string | null; unit_price: number; qty: number }[];
-  payments: { installments: number; card_brand: string | null; interest_free: boolean; created_at: string }[];
+  payments: { installments: number; card_brand: string | null; interest_free: boolean; created_at: string; raw: { cash?: { code: string; expiresAt: string } } | null }[];
 };
 
 export function shippingLabel(provider: string | null, service: string | null): string {
@@ -330,7 +336,9 @@ function rowToView(r: OrderRow): OrderView {
       unitPrice: i.unit_price,
       qty: i.qty,
     })),
-    lastPayment: last ? { installments: last.installments, cardBrand: last.card_brand, interestFree: last.interest_free } : null,
+    lastPayment: last
+      ? { installments: last.installments, cardBrand: last.card_brand, interestFree: last.interest_free, voucher: last.raw?.cash ?? null }
+      : null,
   };
 }
 
@@ -343,7 +351,7 @@ export async function getOrder(number: string, accessToken: string): Promise<Ord
   }
   const { data } = await serviceClient()
     .from("orders")
-    .select("*, order_items(product_name, color_name, size, sku, image_url, unit_price, qty), payments(installments, card_brand, interest_free, created_at)")
+    .select("*, order_items(product_name, color_name, size, sku, image_url, unit_price, qty), payments(installments, card_brand, interest_free, created_at, raw)")
     .eq("number", number)
     .eq("access_token", accessToken)
     .maybeSingle();
@@ -355,7 +363,7 @@ export async function getOrderByNumberUnsafe(number: string): Promise<OrderView 
   if (!hasSupabase) return [...demoOrders.values()].find((x) => x.number === number) ?? null;
   const { data } = await serviceClient()
     .from("orders")
-    .select("*, order_items(product_name, color_name, size, sku, image_url, unit_price, qty), payments(installments, card_brand, interest_free, created_at)")
+    .select("*, order_items(product_name, color_name, size, sku, image_url, unit_price, qty), payments(installments, card_brand, interest_free, created_at, raw)")
     .eq("number", number)
     .maybeSingle();
   return data ? rowToView(data as OrderRow) : null;

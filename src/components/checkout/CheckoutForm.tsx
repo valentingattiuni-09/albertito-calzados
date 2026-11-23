@@ -12,6 +12,7 @@ import { setShippingPrefs, useShippingPrefs } from "@/lib/cart/shipping-store";
 import { useCartItems, writeCart } from "@/lib/cart/store";
 import type { PaymentPromo } from "@/lib/data/types";
 import { formatPrice } from "@/lib/format";
+import { CASH_DAYS } from "@/lib/payments/cash-info";
 import { detectBrand, tokenizeCard, validateCard, type CardInput } from "@/lib/payments/client";
 
 const PROVINCES = [
@@ -28,6 +29,11 @@ const BRANDS: { id: string; label: string; tag?: string }[] = [
   { id: "visa_debito", label: "Visa Débito", tag: "Débito" },
   { id: "master_debito", label: "Maestro / Master Débito", tag: "Débito" },
 ];
+
+/** Nombre de la red de cobro en efectivo (sin logo hasta que tengamos los oficiales). */
+function CashMark({ name }: { name: string }) {
+  return <span className="inline-flex h-7 items-center rounded border border-azul/30 bg-blanco px-2.5 text-xs font-bold uppercase tracking-wide">{name}</span>;
+}
 
 type Customer = { email: string; firstName: string; lastName: string; dni: string; phone: string };
 type Address = { street: string; number: string; floor: string; city: string; province: string };
@@ -93,6 +99,7 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [couponDraft, setCouponDraft] = useState("");
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [method, setMethod] = useState<"tarjeta" | "efectivo">("tarjeta");
   const [brand, setBrand] = useState("");
   const [installments, setInstallments] = useState(1);
   const [card, setCard] = useState<CardInput>({ number: "", holderName: "", expMonth: "", expYear: "", cvv: "", holderDni: "" });
@@ -187,14 +194,18 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
 
   const pay = async () => {
     setPayError(null);
-    if (!brand) return setPayError("Elegí la tarjeta.");
-    const cardError = validateCard(card);
+    const cash = method === "efectivo";
+    if (!cash && !brand) return setPayError("Elegí la tarjeta.");
+    const cardError = cash ? null : validateCard(card);
     if (cardError) return setPayError(cardError);
 
     setSubmitting(true);
     try {
-      const tok = await tokenizeCard(card);
-      const payment = { token: tok.token, bin: tok.bin, brand, installments: plan.installments };
+      // Efectivo: no hay tarjeta; el servidor genera el cupón de Pago Fácil / Rapipago
+      const tok = cash ? null : await tokenizeCard(card);
+      const payment = tok
+        ? { method: "tarjeta" as const, token: tok.token, bin: tok.bin, brand, installments: plan.installments }
+        : { method: "efectivo" as const, token: "", brand: "efectivo", installments: 1 };
       const createOrder = () =>
         fetch("/api/checkout", {
           method: "POST",
@@ -419,110 +430,163 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
               autoComplete="on"
             >
               <fieldset>
-                <legend className="mb-2 text-sm font-semibold">Elegí tu tarjeta (crédito o débito)</legend>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {BRANDS.map((b) => (
+                <legend className="mb-2 text-sm font-semibold">¿Cómo querés pagar?</legend>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {(
+                    [
+                      ["tarjeta", "Tarjeta de crédito o débito", "Visa, Mastercard, Naranja y más"],
+                      ["efectivo", "Efectivo", "En Pago Fácil o Rapipago"],
+                    ] as const
+                  ).map(([m, title, sub]) => (
                     <label
-                      key={b.id}
-                      // Seleccionada: borde grueso (los logos necesitan fondo blanco)
-                      className="flex min-h-14 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md border border-azul/25 bg-blanco px-2 py-1.5 text-center text-sm font-semibold has-[:checked]:border-azul has-[:checked]:ring-2 has-[:checked]:ring-azul"
+                      key={m}
+                      className="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-azul/25 px-3 py-2 has-[:checked]:border-azul has-[:checked]:ring-2 has-[:checked]:ring-azul"
                     >
                       <input
                         type="radio"
-                        name="brand"
-                        value={b.id}
-                        checked={brand === b.id}
+                        name="method"
+                        value={m}
+                        checked={method === m}
                         onChange={() => {
-                          setBrand(b.id);
-                          setInstallments(1);
+                          setMethod(m);
+                          setPayError(null);
                         }}
-                        className="sr-only"
+                        className="size-4 accent-azul"
                       />
-                      <PaymentLogo provider={b.id} label={b.label} className="h-6" />
-                      {b.tag && <span className="text-[11px] font-medium uppercase tracking-wide text-gris-tinta">{b.tag}</span>}
+                      <span className="text-sm">
+                        <strong className="block font-semibold">{title}</strong>
+                        <span className="text-gris-tinta">{sub}</span>
+                      </span>
                     </label>
                   ))}
                 </div>
               </fieldset>
 
-              {brand && (
+              {method === "efectivo" && (
+                <div className="space-y-2 rounded-md bg-azul/5 p-4 text-sm leading-relaxed">
+                  <p className="flex flex-wrap gap-2" aria-label="Dónde pagar">
+                    <CashMark name="Pago Fácil" />
+                    <CashMark name="Rapipago" />
+                  </p>
+                  <p>
+                    Al confirmar te damos un <strong>código de pago</strong>. Lo mostrás en cualquier Pago Fácil o Rapipago y pagás {formatPrice(total)} en
+                    efectivo.
+                  </p>
+                  <p>
+                    Tenés <strong>{CASH_DAYS} días</strong> para pagar. Preparamos tu pedido cuando se acredita el pago.
+                  </p>
+                </div>
+              )}
+
+              {method === "tarjeta" && (
+                <>
                 <fieldset>
-                  <legend className="mb-2 text-sm font-semibold">Cuotas</legend>
-                  <div className="space-y-2">
-                    {plans.map((p) => (
+                  <legend className="mb-2 text-sm font-semibold">Elegí tu tarjeta (crédito o débito)</legend>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {BRANDS.map((b) => (
                       <label
-                        key={p.installments}
-                        className="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-md border border-azul/20 px-3 has-[:checked]:border-azul has-[:checked]:ring-1 has-[:checked]:ring-azul"
+                        key={b.id}
+                        // Seleccionada: borde grueso (los logos necesitan fondo blanco)
+                        className="flex min-h-14 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md border border-azul/25 bg-blanco px-2 py-1.5 text-center text-sm font-semibold has-[:checked]:border-azul has-[:checked]:ring-2 has-[:checked]:ring-azul"
                       >
-                        <span className="flex items-center gap-3">
-                          <input type="radio" name="installments" checked={plan.installments === p.installments} onChange={() => setInstallments(p.installments)} className="size-4 accent-azul" />
-                          <span className="text-sm">
-                            {p.installments === 1 ? "1 pago" : `${p.installments} cuotas`}
-                            {p.installments > 1 && <strong className="ml-1 font-bold">sin interés</strong>}
-                          </span>
-                        </span>
-                        <span className="text-sm font-bold">
-                          {p.installments > 1 ? `${p.installments} × ${formatPrice(Math.ceil(total / p.installments))}` : formatPrice(total)}
-                        </span>
+                        <input
+                          type="radio"
+                          name="brand"
+                          value={b.id}
+                          checked={brand === b.id}
+                          onChange={() => {
+                            setBrand(b.id);
+                            setInstallments(1);
+                          }}
+                          className="sr-only"
+                        />
+                        <PaymentLogo provider={b.id} label={b.label} className="h-6" />
+                        {b.tag && <span className="text-[11px] font-medium uppercase tracking-wide text-gris-tinta">{b.tag}</span>}
                       </label>
                     ))}
                   </div>
                 </fieldset>
-              )}
 
-              {/* Datos de la tarjeta: se tokenizan en el navegador; los inputs no tienen `name` para que nunca se envíen en un form */}
-              <fieldset className="grid gap-4 sm:grid-cols-6">
-                <legend className="mb-3 text-sm font-semibold">Datos de la tarjeta</legend>
-                <div className="sm:col-span-6">
-                  <label htmlFor={`${id}-cc`} className={labelCls}>
-                    Número de tarjeta
-                  </label>
-                  <input
-                    id={`${id}-cc`}
-                    inputMode="numeric"
-                    autoComplete="cc-number"
-                    className={input}
-                    value={card.number}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/[^\d ]/g, "").slice(0, 23);
-                      setCard({ ...card, number: v });
-                      const detected = detectBrand(v);
-                      if (detected && !brand) setBrand(detected);
-                    }}
-                    placeholder="0000 0000 0000 0000"
-                  />
-                </div>
-                <div className="sm:col-span-6">
-                  <label htmlFor={`${id}-ccname`} className={labelCls}>
-                    Nombre como figura en la tarjeta
-                  </label>
-                  <input id={`${id}-ccname`} autoComplete="cc-name" className={input} value={card.holderName} onChange={(e) => setCard({ ...card, holderName: e.target.value })} />
-                </div>
-                <div className="sm:col-span-2">
-                  <span className={labelCls}>Vencimiento</span>
-                  <div className="flex gap-2">
-                    <input aria-label="Mes de vencimiento (MM)" inputMode="numeric" autoComplete="cc-exp-month" placeholder="MM" maxLength={2} className={input} value={card.expMonth} onChange={(e) => setCard({ ...card, expMonth: e.target.value.replace(/\D/g, "") })} />
-                    <input aria-label="Año de vencimiento (AA)" inputMode="numeric" autoComplete="cc-exp-year" placeholder="AA" maxLength={2} className={input} value={card.expYear} onChange={(e) => setCard({ ...card, expYear: e.target.value.replace(/\D/g, "") })} />
+                {brand && (
+                  <fieldset>
+                    <legend className="mb-2 text-sm font-semibold">Cuotas</legend>
+                    <div className="space-y-2">
+                      {plans.map((p) => (
+                        <label
+                          key={p.installments}
+                          className="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-md border border-azul/20 px-3 has-[:checked]:border-azul has-[:checked]:ring-1 has-[:checked]:ring-azul"
+                        >
+                          <span className="flex items-center gap-3">
+                            <input type="radio" name="installments" checked={plan.installments === p.installments} onChange={() => setInstallments(p.installments)} className="size-4 accent-azul" />
+                            <span className="text-sm">
+                              {p.installments === 1 ? "1 pago" : `${p.installments} cuotas`}
+                              {p.installments > 1 && <strong className="ml-1 font-bold">sin interés</strong>}
+                            </span>
+                          </span>
+                          <span className="text-sm font-bold">
+                            {p.installments > 1 ? `${p.installments} × ${formatPrice(Math.ceil(total / p.installments))}` : formatPrice(total)}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
+
+                {/* Datos de la tarjeta: se tokenizan en el navegador; los inputs no tienen `name` para que nunca se envíen en un form */}
+                <fieldset className="grid gap-4 sm:grid-cols-6">
+                  <legend className="mb-3 text-sm font-semibold">Datos de la tarjeta</legend>
+                  <div className="sm:col-span-6">
+                    <label htmlFor={`${id}-cc`} className={labelCls}>
+                      Número de tarjeta
+                    </label>
+                    <input
+                      id={`${id}-cc`}
+                      inputMode="numeric"
+                      autoComplete="cc-number"
+                      className={input}
+                      value={card.number}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^\d ]/g, "").slice(0, 23);
+                        setCard({ ...card, number: v });
+                        const detected = detectBrand(v);
+                        if (detected && !brand) setBrand(detected);
+                      }}
+                      placeholder="0000 0000 0000 0000"
+                    />
                   </div>
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor={`${id}-cvv`} className={labelCls}>
-                    Código de seguridad
-                  </label>
-                  <input id={`${id}-cvv`} inputMode="numeric" autoComplete="cc-csc" maxLength={4} className={input} value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "") })} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor={`${id}-ccdni`} className={labelCls}>
-                    DNI del titular
-                  </label>
-                  <input id={`${id}-ccdni`} inputMode="numeric" className={input} value={card.holderDni} onChange={(e) => setCard({ ...card, holderDni: e.target.value })} placeholder={customer.dni} />
-                </div>
-              </fieldset>
+                  <div className="sm:col-span-6">
+                    <label htmlFor={`${id}-ccname`} className={labelCls}>
+                      Nombre como figura en la tarjeta
+                    </label>
+                    <input id={`${id}-ccname`} autoComplete="cc-name" className={input} value={card.holderName} onChange={(e) => setCard({ ...card, holderName: e.target.value })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className={labelCls}>Vencimiento</span>
+                    <div className="flex gap-2">
+                      <input aria-label="Mes de vencimiento (MM)" inputMode="numeric" autoComplete="cc-exp-month" placeholder="MM" maxLength={2} className={input} value={card.expMonth} onChange={(e) => setCard({ ...card, expMonth: e.target.value.replace(/\D/g, "") })} />
+                      <input aria-label="Año de vencimiento (AA)" inputMode="numeric" autoComplete="cc-exp-year" placeholder="AA" maxLength={2} className={input} value={card.expYear} onChange={(e) => setCard({ ...card, expYear: e.target.value.replace(/\D/g, "") })} />
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor={`${id}-cvv`} className={labelCls}>
+                      Código de seguridad
+                    </label>
+                    <input id={`${id}-cvv`} inputMode="numeric" autoComplete="cc-csc" maxLength={4} className={input} value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "") })} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor={`${id}-ccdni`} className={labelCls}>
+                      DNI del titular
+                    </label>
+                    <input id={`${id}-ccdni`} inputMode="numeric" className={input} value={card.holderDni} onChange={(e) => setCard({ ...card, holderDni: e.target.value })} placeholder={customer.dni} />
+                  </div>
+                </fieldset>
 
-              {process.env.NEXT_PUBLIC_PAYMENT_PROVIDER !== "payway" && (
-                <p className="rounded-md border border-dashed border-azul/30 p-3 text-xs">
-                  <strong>Modo de prueba:</strong> usá cualquier número. Terminado en <strong>0002</strong> se rechaza; en <strong>0003</strong> queda pendiente; cualquier otro se aprueba.
-                </p>
+                {process.env.NEXT_PUBLIC_PAYMENT_PROVIDER !== "payway" && (
+                  <p className="rounded-md border border-dashed border-azul/30 p-3 text-xs">
+                    <strong>Modo de prueba:</strong> usá cualquier número. Terminado en <strong>0002</strong> se rechaza; en <strong>0003</strong> queda pendiente; cualquier otro se aprueba.
+                  </p>
+                )}
+                </>
               )}
 
               {payError && (
@@ -533,9 +597,15 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
               )}
 
               <button type="submit" disabled={submitting} className="h-14 w-full rounded-md bg-rojo text-base font-bold uppercase tracking-wide text-blanco disabled:opacity-60">
-                {submitting ? "Procesando…" : pendingOrder ? `Reintentar pago · ${formatPrice(total)}` : `Pagar ${formatPrice(total)}`}
+                {submitting
+                  ? "Procesando…"
+                  : method === "efectivo"
+                    ? `Generar código de pago · ${formatPrice(total)}`
+                    : pendingOrder
+                      ? `Reintentar pago · ${formatPrice(total)}`
+                      : `Pagar ${formatPrice(total)}`}
               </button>
-              <p className="text-center text-xs italic text-gris-tinta">Pago seguro con Payway. No guardamos los datos de tu tarjeta.</p>
+              {method === "tarjeta" && <p className="text-center text-xs italic text-gris-tinta">Pago seguro con Payway. No guardamos los datos de tu tarjeta.</p>}
             </form>
           )}
         </section>
@@ -598,7 +668,7 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
             <dt className="font-bold uppercase">Total</dt>
             <dd className="text-2xl font-bold">{formatPrice(total)}</dd>
           </div>
-          {plan.installments > 1 && (
+          {method === "tarjeta" && plan.installments > 1 && (
             <p className="flex flex-wrap items-center justify-end gap-x-2 text-right text-sm font-medium">
               <span>
                 {plan.installments} cuotas sin interés de {formatPrice(Math.ceil(total / plan.installments))}

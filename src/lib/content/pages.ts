@@ -28,6 +28,7 @@ export const HELP_PAGES: Record<string, ContentPage> = {
         paragraphs: [
           "Tarjetas de crédito y débito a través de Payway. Las cuotas sin interés vigentes se muestran en cada producto y en el checkout.",
           "No guardamos los datos de tu tarjeta: el pago se procesa de forma segura en Payway.",
+          "Efectivo en Pago Fácil o Rapipago: al terminar la compra te damos un código de pago. Tenés 3 días para pagarlo y preparamos tu pedido cuando se acredita.",
         ],
       },
     ],

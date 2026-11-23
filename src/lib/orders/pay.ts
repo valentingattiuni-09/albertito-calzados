@@ -4,9 +4,11 @@ import { TAGS } from "@/lib/data/tags";
 import { getPaymentPromos } from "@/lib/data/layout";
 import { sendOrderConfirmation } from "@/lib/email";
 import { cardProvider } from "@/lib/payments";
+import { createCashVoucher } from "@/lib/payments/cash";
 import { recordPayment, type OrderView } from "./orders";
 
-export type PaymentInput = { token: string; brand: string; installments: number; bin?: string };
+/** method "efectivo": cupón para Pago Fácil o Rapipago (sin tarjeta). */
+export type PaymentInput = { method?: "tarjeta" | "efectivo"; token: string; brand: string; installments: number; bin?: string };
 
 export const CARD_BRANDS = ["visa", "master", "naranja", "tarjeta_verde", "visa_debito", "master_debito"] as const;
 
@@ -26,6 +28,19 @@ export type PayOutcome = { order: OrderView; message?: string };
 /** Cobra un pedido con el proveedor activo y registra el resultado. */
 export async function payOrder(order: OrderView, payment: PaymentInput, siteUrl: string): Promise<PayOutcome> {
   if (order.paymentStatus === "aprobado") return { order };
+
+  // Efectivo: se genera el cupón y el pedido queda pendiente hasta que se pague
+  if (payment.method === "efectivo") {
+    const cash = createCashVoucher(order.number, order.total);
+    const updated = await recordPayment(order, "efectivo", cash, {
+      amount: order.total,
+      installments: 1,
+      interestFree: true,
+      cardBrand: "efectivo",
+      voucher: cash.voucher,
+    });
+    return { order: updated };
+  }
   if (!(CARD_BRANDS as readonly string[]).includes(payment.brand)) return { order, message: "Elegí la tarjeta." };
   if (typeof payment.token !== "string" || payment.token.length < 6 || payment.token.length > 200) {
     return { order, message: "No pudimos leer la tarjeta. Probá de nuevo." };

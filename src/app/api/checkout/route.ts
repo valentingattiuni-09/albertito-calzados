@@ -115,16 +115,18 @@ export async function POST(req: NextRequest) {
 
   // 5. Validar el pago antes de crear el pedido (tarjeta y cuotas permitidas para este total)
   const pay = body.payment;
-  if (!pay || typeof pay.token !== "string" || !pay.token) return bad("Completá los datos de la tarjeta.", "payment");
-  if (!(CARD_BRANDS as readonly string[]).includes(pay.brand)) return bad("Elegí la tarjeta.", "payment");
+  if (!pay) return bad("Elegí cómo pagar.", "payment");
+  const cash = pay.method === "efectivo";
+  if (!cash && (typeof pay.token !== "string" || !pay.token)) return bad("Completá los datos de la tarjeta.", "payment");
+  if (!cash && !(CARD_BRANDS as readonly string[]).includes(pay.brand)) return bad("Elegí la tarjeta.", "payment");
   let discount = 0;
   if (couponCode) {
     const res = await findCoupon(couponCode, cart.subtotal);
     if (!("error" in res)) discount = res.discount;
   }
   const expectedTotal = cart.subtotal - discount + shipping.cost;
-  const plans = await allowedInstallments(pay.brand, expectedTotal);
-  if (!plans.some((p) => p.installments === pay.installments)) return bad("Esa cantidad de cuotas no está disponible para esta tarjeta.", "installments");
+  const plans = cash ? [{ installments: 1 }] : await allowedInstallments(pay.brand, expectedTotal);
+  if (!cash && !plans.some((p) => p.installments === pay.installments)) return bad("Esa cantidad de cuotas no está disponible para esta tarjeta.", "installments");
 
   // 6. Pedido + pago
   try {

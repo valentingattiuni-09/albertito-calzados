@@ -52,13 +52,17 @@ export function BenefitsRow({ promos }: { promos: PaymentPromo[] }) {
         </span>
       ),
     })),
+    { icon: <CardIcon />, title: "Pagá en efectivo", text: "Pago Fácil y Rapipago" },
     { icon: <TruckIcon />, title: "Envíos a todo el país", text: "Andreani y Correo Argentino" },
     { icon: <SwapIcon />, title: "Cambiá gratis en el local", text: "Edison 15, Villa Mercedes" },
   ];
 
   return (
     <section aria-label="Beneficios" className="border-b border-azul/10">
-      <ul className="no-scrollbar mx-auto flex max-w-tienda snap-x scroll-px-4 gap-5 overflow-x-auto px-4 py-3 lg:grid lg:grid-cols-4 lg:gap-4 lg:px-6 lg:py-4">
+      <ul
+        className="no-scrollbar mx-auto flex max-w-tienda snap-x scroll-px-4 gap-5 overflow-x-auto px-4 py-3 lg:grid lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))] lg:gap-4 lg:px-6 lg:py-4"
+        style={{ ["--cols" as string]: items.length }}
+      >
         {items.map((it) => (
           <li key={it.title} className="flex shrink-0 snap-start items-center gap-3 lg:shrink">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-azul text-blanco">{it.icon}</span>
@@ -109,7 +113,11 @@ export function PaymentPromosBlock({ promos }: { promos: PaymentPromo[] }) {
   return (
     <section aria-labelledby="medios-pago" className="mx-auto max-w-tienda px-4 lg:px-6">
       <SectionTitle id="medios-pago">Medios de pago y promociones</SectionTitle>
-      <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {/* Una columna por tarjeta en escritorio (máx. 5), así ninguna queda sola en una fila */}
+      <ul
+        className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-[repeat(var(--cols),minmax(0,1fr))]"
+        style={{ ["--cols" as string]: Math.min(promos.length + 1, 5) }}
+      >
         {promos.map((p) => (
           <li key={p.id} className="flex flex-col justify-between rounded-lg border border-azul/15 p-4 sm:p-5">
             <div className="flex h-8 items-center">
@@ -124,6 +132,16 @@ export function PaymentPromosBlock({ promos }: { promos: PaymentPromo[] }) {
             </p>
           </li>
         ))}
+        <li className={`flex flex-col justify-between rounded-lg border border-azul/15 p-4 sm:p-5 ${promos.length % 2 === 0 ? "col-span-2 lg:col-span-1" : ""}`}>
+          <div className="flex h-8 items-center">
+            <span className="text-base font-bold">Pago Fácil y Rapipago</span>
+          </div>
+          <p className="mt-4">
+            <span className="font-campana text-4xl leading-none text-rojo">$</span>
+            <span className="ml-1 text-base font-bold">en efectivo</span>
+          </p>
+          <p className="mt-2 text-xs italic text-gris-tinta">Te damos el código al terminar la compra</p>
+        </li>
       </ul>
     </section>
   );

@@ -19,7 +19,10 @@ const BRAND_LABEL: Record<string, string> = {
   tarjeta_verde: "Tarjeta Verde",
   visa_debito: "Visa Débito",
   master_debito: "Débito Mastercard",
+  efectivo: "Efectivo (Pago Fácil o Rapipago)",
 };
+
+const dateFmt = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Argentina/Buenos_Aires" });
 
 export default async function ConfirmationPage({ params, searchParams }: PageProps<"/checkout/confirmacion/[numero]">) {
   const [{ numero }, sp, settings] = await Promise.all([params, searchParams, getSettings()]);
@@ -29,6 +32,8 @@ export default async function ConfirmationPage({ params, searchParams }: PagePro
   if (!order) notFound();
 
   const pending = order.paymentStatus === "pendiente";
+  // Efectivo sin pagar todavía: mostrar el cupón
+  const voucher = pending && order.lastPayment?.cardBrand === "efectivo" ? order.lastPayment.voucher : null;
   const s = order.shipping;
 
   return (
@@ -46,12 +51,33 @@ export default async function ConfirmationPage({ params, searchParams }: PagePro
       <div className={`rounded-xl p-6 text-blanco sm:p-8 ${pending ? "bg-azul" : "bg-rojo"}`}>
         <p className="text-sm font-semibold uppercase tracking-[0.2em]">Pedido {order.number}</p>
         <h1 className="mt-2 font-campana text-3xl uppercase leading-tight sm:text-4xl">
-          {pending ? "Estamos revisando tu pago" : `¡Gracias, ${order.customer.firstName}!`}
+          {voucher ? "Solo falta pagar" : pending ? "Estamos revisando tu pago" : `¡Gracias, ${order.customer.firstName}!`}
         </h1>
         <p className="mt-2 text-lg font-medium">
-          {pending ? "Te avisamos por mail apenas se confirme." : "Tu compra está confirmada. Pisá fuerte."}
+          {voucher
+            ? "Pagá en efectivo en Pago Fácil o Rapipago con este código."
+            : pending
+              ? "Te avisamos por mail apenas se confirme."
+              : "Tu compra está confirmada. Pisá fuerte."}
         </p>
       </div>
+
+      {voucher && (
+        <section aria-labelledby="cupon" className="mt-6 rounded-xl border-2 border-dashed border-azul p-5 text-center sm:p-6">
+          <h2 id="cupon" className="text-sm font-bold uppercase tracking-[0.15em]">
+            Código de pago
+          </h2>
+          <p className="mt-2 select-all font-mono text-2xl font-bold tracking-wider sm:text-3xl">{voucher.code}</p>
+          <p className="mt-3 text-lg">
+            Total a pagar: <strong>{formatPrice(order.total)}</strong>
+          </p>
+          <p className="mt-1 text-sm">
+            Pagalo antes del <strong>{dateFmt.format(new Date(voucher.expiresAt))}</strong> en cualquier Pago Fácil o Rapipago. Decí que es un pago de
+            cupón y mostrá este código.
+          </p>
+          <p className="mt-3 text-xs text-gris-tinta">Cuando se acredite te avisamos por mail y preparamos tu pedido. Guardá esta página o sacale una captura.</p>
+        </section>
+      )}
 
       <p className="mt-6">
         Te mandamos el detalle a <strong>{order.customer.email}</strong>.{" "}
