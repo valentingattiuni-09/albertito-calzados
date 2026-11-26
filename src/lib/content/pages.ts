@@ -89,11 +89,11 @@ export const HELP_PAGES: Record<string, ContentPage> = {
       },
       {
         title: "Adultos",
-        list: ["35 · 22,5 cm", "36 · 23 cm", "37 · 23,8 cm", "38 · 24,5 cm", "39 · 25,2 cm", "40 · 26 cm", "41 · 26,7 cm", "42 · 27,3 cm", "43 · 28 cm", "44 · 28,7 cm", "45 · 29,4 cm"],
+        list: ["35 · 22,5 cm", "36 · 23 cm", "37 · 23,8 cm", "38 · 24,5 cm", "39 · 25,2 cm", "40 · 26 cm", "41 · 26,7 cm", "42 · 27,3 cm", "43 · 28 cm", "44 · 28,7 cm", "45 · 29,4 cm", "46 · 30,1 cm"],
       },
       {
         title: "Niños",
-        list: ["26 · 16,5 cm", "27 · 17 cm", "28 · 17,8 cm", "29 · 18,5 cm", "30 · 19 cm", "31 · 19,8 cm", "32 · 20,5 cm", "33 · 21 cm", "34 · 21,7 cm", "35 · 22,5 cm"],
+        list: ["16 · 10 cm", "17 · 10,7 cm", "18 · 11,3 cm", "19 · 12 cm", "20 · 12,6 cm", "21 · 13,3 cm", "22 · 14 cm", "23 · 14,6 cm", "24 · 15,2 cm", "25 · 15,9 cm", "26 · 16,5 cm", "27 · 17 cm", "28 · 17,8 cm", "29 · 18,5 cm", "30 · 19 cm", "31 · 19,8 cm", "32 · 20,5 cm", "33 · 21 cm", "34 · 21,7 cm"],
       },
       { paragraphs: ["Medidas orientativas: pueden variar según el modelo. Si tenés dudas, escribinos por WhatsApp."] },
     ],

@@ -61,9 +61,9 @@ const range = (from: number, to: number) => Array.from({ length: to - from + 1 }
 const ALPARGATA_SIZES = { ninos: range(25, 36), adultos: range(37, 46) };
 
 const SIZES = {
-  hombre: range(39, 45),
-  mujer: range(35, 40),
-  ninos: range(26, 35),
+  hombre: range(35, 46),
+  mujer: range(35, 42),
+  ninos: range(16, 34),
   alpargatas: range(25, 46),
 };
 

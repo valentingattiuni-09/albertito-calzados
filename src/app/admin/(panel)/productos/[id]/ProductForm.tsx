@@ -18,10 +18,10 @@ const slugify = (s: string) =>
     .replace(/(^-|-$)/g, "");
 
 const SIZE_PRESETS: Record<string, string> = {
-  hombre: "39-45",
-  mujer: "35-40",
-  ninos: "26-35",
-  alpargatas: "35-45",
+  hombre: "35-46",
+  mujer: "35-42",
+  ninos: "16-34",
+  alpargatas: "25-46",
 };
 
 /** "35-40" o "35,36,38" o "27/28, 29/30" → lista de talles */
