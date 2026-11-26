@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { isBackoffice } from "@/lib/backoffice/source";
 import { demoDb } from "@/lib/demo/db";
 import { hasSupabase, publicClient } from "@/lib/supabase/clients";
 
@@ -22,6 +23,8 @@ export async function subscribeNewsletter(_prev: NewsletterState, form: FormData
   if (preference && !PREFERENCES.includes(preference)) return { ok: false, message: "Elegí para quién comprás." };
   if (birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return { ok: false, message: "Revisá la fecha de nacimiento." };
 
+  // Fase A con el back office: el newsletter llega en la fase C (no se guarda en memoria)
+  if (isBackoffice()) return { ok: false, message: "El newsletter se habilita muy pronto. ¡Gracias por tu interés!" };
   if (!hasSupabase) {
     console.info("[newsletter:demo]", { email, preference, birthDate, source });
     const subs = demoDb().subscribers;

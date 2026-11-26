@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { checkoutClosedResponse } from "@/lib/backoffice/guard";
 import { getLiveVariants, getProductShippingData } from "@/lib/orders/live";
 import { quoteShipping, type PackageInput } from "@/lib/shipping/service";
 import { normalizeCp } from "@/lib/shipping/types";
@@ -8,6 +10,8 @@ import { normalizeCp } from "@/lib/shipping/types";
  * Body: { cp, items: [{ variantId, qty }] }  o  { cp, productId, qty } desde la ficha antes de elegir talle.
  */
 export async function POST(req: NextRequest) {
+  // Fase A con el back office: las compras están apagadas (se habilitan en la fase B)
+  if (isBackoffice()) return checkoutClosedResponse();
   const body = (await req.json().catch(() => null)) as {
     cp?: string;
     items?: { variantId: string; qty: number }[];

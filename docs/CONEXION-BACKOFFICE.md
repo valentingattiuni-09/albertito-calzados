@@ -4,6 +4,49 @@ Esta web es **solo el front** (la vidriera). El back office de Albertito es la f
 
 > Versión visual de esta guía: `docs/conexion-backoffice.html` (abrir en el navegador).
 
+## Modo back office (`DATA_SOURCE=backoffice`)
+
+Ya está hecho el **adaptador de lectura** (fase A): con `DATA_SOURCE=backoffice` la web lee todo de la API de la tienda del back office (`/api/v1/store/*`, servidor a servidor, cabecera `X-Store-Key`). Los tipos de `src/lib/data/types.ts` **no cambiaron**: los componentes son los mismos. El modo demo (`DATA_SOURCE` vacío o `demo`) sigue exactamente igual.
+
+### Variables
+
+| Variable | Para qué |
+|---|---|
+| `DATA_SOURCE` | `demo` (por defecto) o `backoffice`. Otro valor corta el arranque con un mensaje claro. |
+| `BACKOFFICE_API_URL` | URL base de la API, ej. `http://api:3000/api/v1` (red interna de Docker) o `http://localhost:3002/api/v1` (local). |
+| `STORE_API_KEY` | Clave de la API de la tienda. **Solo servidor**: la usa `src/lib/backoffice/client.ts` (con `server-only`); nunca llega al navegador. |
+| `BACKOFFICE_TIMEOUT_MS` | Tiempo máximo por pedido (4000 por defecto). |
+| `IMAGE_HOSTS` | El host de las fotos del back office (ej. `media.albertitocalzados.com.ar`). En desarrollo acepta `http://localhost:PUERTO`. |
+| `NEXT_PUBLIC_STORE_WHATSAPP` | WhatsApp del local para la página «Estamos actualizando la tienda». |
+| `ALLOW_LOCAL_MEDIA` | Solo para probar un build de producción en tu compu con fotos por `http://localhost`. Nunca en producción. |
+
+### Cómo funciona
+
+- **Código:** `src/lib/backoffice/` — `source.ts` (el modo), `client.ts` + `http.ts` (cliente con timeout, reintentos solo en lecturas y respaldo), `map.ts` (mapeo a `types.ts`: centavos → pesos, color sin hex → gris, línea vacía → «diario», texto de búsqueda), `store.ts` (lecturas), `guard.ts` (compras apagadas), `build.ts` (build sin la API).
+- **Caché:** la misma de siempre (`"use cache"` + `cacheTag`/`cacheLife` + `POST /api/revalidate`). La búsqueda y los sinónimos se resuelven en memoria, como en el modo demo.
+- **Si la API se cae:** se sigue mostrando la última copia (lo que Next tiene cacheado y, además, una copia en memoria de cada lectura). Si no hay ninguna copia (por ejemplo, la web recién arrancó), se ve una página amable «Estamos actualizando la tienda. Volvé en unos minutos.» con el WhatsApp del local; apenas la API responde, la tienda vuelve sola.
+- **Build:** no necesita la API. Si no la alcanza (por ejemplo, al construir la imagen de Docker), compila con datos vacíos y la tienda se completa sola al arrancar.
+- **Supabase:** con `backoffice` no se usa en ningún lado (`hasSupabase` es siempre `false` y los clientes cortan antes de conectarse).
+
+### Qué queda apagado en la fase A (solo lectura)
+
+| Qué | Cómo se ve |
+|---|---|
+| Comprar | «Iniciar compra» deshabilitado en el carrito, con el aviso; `/checkout` muestra el aviso y el botón de WhatsApp. |
+| `POST /api/checkout`, `/api/checkout/pay`, `/api/coupon`, `/api/shipping/quote` | 503 `CHECKOUT_CLOSED` con el mensaje. |
+| Cotizador de envío (ficha y carrito) | No se muestra (en la ficha, el aviso). |
+| `/checkout/confirmacion/*` y «Seguí tu pedido» | 404 / mensaje (todavía no hay pedidos online). |
+| Panel `/admin` y `/api/admin/*` | 404 (el catálogo se administra en el back office). |
+| Webhook de Payway (`/api/webhooks/payway`) | 404 (los pagos los confirma el back office). |
+| Banners y videos del home, promos de cuotas, barra superior | Vacíos (llegan en la fase C). |
+| Newsletter | Mensaje «se habilita muy pronto» (fase C). |
+| Botón de arrepentimiento | Deriva al mail y al WhatsApp del local (pasa al back office en la fase B). |
+
+### Lo que viene
+
+- **Fase B (compra):** pedidos de invitado en el back office, cobro con Payway (formulario alojado si Payway lo ofrece) y Mercado Pago, confirmación solo por webhook, cotización real de Andreani y Correo Argentino (con respaldo por zona y retiro en el local), arrepentimiento y seguimiento en el back office, mails del pedido.
+- **Fase C:** banners, videos, promos de cuotas, barra superior, newsletter y cupones desde el back office; alta y seguimiento de envíos; el back office avisa a `/api/revalidate` cuando cambia algo.
+
 ## Las 3 conexiones
 
 | # | Dirección | Qué pasa |

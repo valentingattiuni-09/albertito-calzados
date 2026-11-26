@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { isBackoffice } from "@/lib/backoffice/source";
 import { getOrderByNumberUnsafe } from "@/lib/orders/orders";
 
 export type TrackState = { ok: false; message: string } | null;
@@ -12,6 +13,8 @@ export async function trackOrder(_prev: TrackState, f: FormData): Promise<TrackS
   if (!/^ALB-\d{6}$/.test(number)) return { ok: false, message: "El número de pedido es como ALB-001234. Lo tenés en el mail de confirmación." };
   if (!email) return { ok: false, message: "Escribí el mail con el que compraste." };
 
+  // Fase A con el back office: todavía no hay pedidos online (el seguimiento llega en la fase B)
+  if (isBackoffice()) return { ok: false, message: "Todavía no hay compras online. Si compraste en el local, escribinos por WhatsApp." };
   const order = await getOrderByNumberUnsafe(number);
   // Mismo mensaje si no existe o si el mail no coincide: no revela qué pedidos existen
   if (!order || order.customer.email.toLowerCase() !== email) {

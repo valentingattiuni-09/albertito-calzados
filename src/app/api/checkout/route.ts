@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { checkoutClosedResponse } from "@/lib/backoffice/guard";
 import { signReceipt } from "@/lib/orders/demo-receipt";
 import { hasSupabase } from "@/lib/supabase/clients";
 import { getLiveVariants } from "@/lib/orders/live";
@@ -28,6 +30,8 @@ const bad = (message: string, field?: string) => NextResponse.json({ ok: false, 
  * Respuesta: { ok, number, accessToken, paymentStatus, message }
  */
 export async function POST(req: NextRequest) {
+  // Fase A con el back office: las compras están apagadas (se habilitan en la fase B)
+  if (isBackoffice()) return checkoutClosedResponse();
   const body = (await req.json().catch(() => null)) as Body | null;
   if (!body) return bad("Pedido inválido.");
 

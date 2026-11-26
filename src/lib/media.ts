@@ -9,10 +9,19 @@ export function allowedMediaHosts(): string[] {
   const hosts = (process.env.IMAGE_HOSTS ?? "")
     .split(",")
     .map((h) => h.trim().toLowerCase())
-    .filter(Boolean);
+    .filter((h) => h && !h.includes("://"));
   const sb = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (sb) hosts.push(new URL(sb).hostname.toLowerCase());
   return hosts;
+}
+
+/** Entradas «http://localhost:PUERTO» de IMAGE_HOSTS: solo fuera de producción (prueba local contra la API del back office). */
+function allowedLocalOrigins(): string[] {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_LOCAL_MEDIA !== "1") return [];
+  return (process.env.IMAGE_HOSTS ?? "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter((h) => /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(h));
 }
 
 export function isAllowedMediaUrl(url: string | null | undefined): boolean {
@@ -20,6 +29,7 @@ export function isAllowedMediaUrl(url: string | null | undefined): boolean {
   if (url.startsWith("/") && !url.startsWith("//")) return true;
   try {
     const u = new URL(url);
+    if (u.protocol === "http:") return allowedLocalOrigins().includes(u.origin.toLowerCase());
     return u.protocol === "https:" && allowedMediaHosts().includes(u.hostname.toLowerCase());
   } catch {
     return false;

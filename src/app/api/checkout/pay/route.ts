@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { checkoutClosedResponse } from "@/lib/backoffice/guard";
 import { signReceipt } from "@/lib/orders/demo-receipt";
 import { hasSupabase } from "@/lib/supabase/clients";
 import { getOrder } from "@/lib/orders/orders";
@@ -6,6 +8,8 @@ import { payOrder, type PaymentInput } from "@/lib/orders/pay";
 
 /** Reintento de pago de un pedido rechazado (mismo pedido, otra tarjeta). */
 export async function POST(req: NextRequest) {
+  // Fase A con el back office: las compras están apagadas (se habilitan en la fase B)
+  if (isBackoffice()) return checkoutClosedResponse();
   const body = (await req.json().catch(() => null)) as { number?: string; accessToken?: string; payment?: PaymentInput } | null;
   const order = body?.number && body.accessToken ? await getOrder(body.number, body.accessToken) : null;
   if (!order) return NextResponse.json({ ok: false, message: "No encontramos el pedido." }, { status: 404 });

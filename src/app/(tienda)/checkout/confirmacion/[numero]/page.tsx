@@ -1,4 +1,5 @@
 import { PaymentLogo } from "@/components/ui/PaymentLogo";
+import { isBackoffice } from "@/lib/backoffice/source";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,6 +25,8 @@ const BRAND_LABEL: Record<string, string> = {
 const dateFmt = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Argentina/Buenos_Aires" });
 
 export default async function ConfirmationPage({ params, searchParams }: PageProps<"/checkout/confirmacion/[numero]">) {
+  // Fase A con el back office: no hay pedidos online todavía
+  if (isBackoffice()) notFound();
   const [{ numero }, sp, settings] = await Promise.all([params, searchParams, getSettings()]);
   const token = typeof sp.t === "string" ? sp.t : "";
   // Modo demo: si esta instancia no tiene el pedido en memoria, se usa el comprobante firmado

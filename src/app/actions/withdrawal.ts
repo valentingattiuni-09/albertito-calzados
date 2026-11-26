@@ -1,6 +1,7 @@
 "use server";
 
 import { randomInt } from "node:crypto";
+import { isBackoffice } from "@/lib/backoffice/source";
 import { getSettings } from "@/lib/data/layout";
 import { sendWithdrawalConfirmation } from "@/lib/email";
 import { hasSupabase, serviceClient } from "@/lib/supabase/clients";
@@ -25,6 +26,13 @@ export async function requestWithdrawal(_prev: WithdrawalState, f: FormData): Pr
   if (!/^\d{7,8}$/.test(data.dni)) return { ok: false, message: "Revisá el DNI: 7 u 8 números.", field: "dni" };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email)) return { ok: false, message: "Revisá tu mail.", field: "email" };
   if (data.orderNumber && !/^ALB-\d{6}$/.test(data.orderNumber)) return { ok: false, message: "El número de pedido es como ALB-001234.", field: "orderNumber" };
+
+  // Fase A con el back office: la solicitud todavía no se guarda en el back office (llega en la fase B). Se deriva al local, sin perderla.
+  if (isBackoffice()) {
+    const { store, whatsapp } = await getSettings();
+    const contact = [store.email && `a ${store.email}`, whatsapp.display && `por WhatsApp al ${whatsapp.display}`].filter(Boolean).join(" o ");
+    return { ok: false, message: `Por ahora pedí la revocación ${contact || "en el local"}: te respondemos en el día y te damos tu código de trámite.` };
+  }
 
   const code = `ARR-${new Date().getFullYear()}-${String(randomInt(0, 1_000_000)).padStart(6, "0")}`;
 

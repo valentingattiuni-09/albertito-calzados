@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { CHECKOUT_CLOSED_MESSAGE } from "@/lib/backoffice/guard";
 import { notFound } from "next/navigation";
 import { Breadcrumb, type Crumb } from "@/components/catalog/Breadcrumb";
 import { ActiveSection } from "@/components/layout/ActiveSection";
@@ -11,7 +13,9 @@ import type { NavSection, NavSubsection, ProductDetail } from "@/lib/data/types"
 
 export async function generateStaticParams() {
   const catalog = await getCatalog();
-  return catalog.map((p) => ({ slug: p.slug }));
+  const params = catalog.map((p) => ({ slug: p.slug }));
+  // Cache Components exige al menos un resultado: si todavía no hay datos (o el build corrió sin la API del back office), un valor de relleno que da 404
+  return params.length ? params : [{ slug: "_sin-datos" }];
 }
 
 /** Sección y subsección del producto (para breadcrumb, guía de talles y relacionados). */
@@ -95,6 +99,7 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           taxFactor={settings.tax.factor}
           kids={section?.slug === "ninos"}
           storeAddress={`${settings.store.address}, ${settings.store.city}`}
+          checkoutClosed={isBackoffice() ? CHECKOUT_CLOSED_MESSAGE : undefined}
         />
       </div>
 

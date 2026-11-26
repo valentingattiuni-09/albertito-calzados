@@ -3,6 +3,8 @@ import { demoSettings } from "@/lib/demo/catalog";
 import { demoDb, demoSaleActive } from "@/lib/demo/db";
 import { safeMediaUrl } from "@/lib/media";
 import { hasSupabase, serviceClient } from "@/lib/supabase/clients";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { boLiveVariants } from "@/lib/backoffice/store";
 
 /**
  * Lecturas en vivo (sin caché) para carrito, envío y checkout:
@@ -41,6 +43,7 @@ export async function getLiveVariants(ids: string[]): Promise<Map<string, LiveVa
   const out = new Map<string, LiveVariant>();
   if (unique.length === 0) return out;
 
+  if (isBackoffice()) return boLiveVariants(unique);
   if (!hasSupabase) {
     for (const p of demoDb().products) {
       for (const v of p.variants) {
@@ -122,6 +125,8 @@ export async function getLiveVariants(ids: string[]): Promise<Map<string, LiveVa
 
 /** Peso y caja por producto (para cotizar desde la ficha, antes de elegir talle). */
 export async function getProductShippingData(productId: string): Promise<{ weightG: number | null; box: { l: number; w: number; h: number } | null } | null> {
+  // Back office: la cotización de envíos llega en la fase B (la ruta de cotización responde 503)
+  if (isBackoffice()) return null;
   if (!hasSupabase) {
     const p = demoDb().products.find((x) => x.id === productId && x.active);
     return p ? { weightG: p.weightG, box: p.box } : null;
@@ -138,6 +143,7 @@ export type ShippingConfig = {
 
 export async function getShippingConfig(): Promise<ShippingConfig> {
   const fallback = demoSettings.shipping.value as ShippingConfig;
+  if (isBackoffice()) return fallback;
   if (!hasSupabase) return { ...fallback, ...(demoDb().settings.shipping?.value as object) };
   const { data } = await serviceClient().from("settings").select("value").eq("key", "shipping").maybeSingle();
   return { ...fallback, ...(data?.value ?? {}) };
@@ -146,6 +152,7 @@ export async function getShippingConfig(): Promise<ShippingConfig> {
 export type FallbackRate = { zone: string; cpFrom: number; cpTo: number; service: "domicilio" | "sucursal"; price: number; etaDays: number | null };
 
 export async function getFallbackRates(): Promise<FallbackRate[]> {
+  if (isBackoffice()) return [];
   if (!hasSupabase) return demoDb().fallbackRates;
   const { data, error } = await serviceClient().from("shipping_fallback_rates").select("zone, cp_from, cp_to, service, price, eta_days");
   if (error) throw error;

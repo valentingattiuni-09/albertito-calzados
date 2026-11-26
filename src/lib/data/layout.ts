@@ -1,6 +1,9 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { hasSupabase, publicClient } from "@/lib/supabase/clients";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { boNavigation, boSettings } from "@/lib/backoffice/store";
+import { orEmptyDuringBuild } from "@/lib/backoffice/build";
 import { TAGS } from "./tags";
 import type { NavSection, PaymentPromo, StoreSettings, TopbarMessage } from "./types";
 import { demoSettings } from "@/lib/demo/catalog";
@@ -53,6 +56,7 @@ export async function getNavigation(): Promise<NavSection[]> {
   cacheTag(TAGS.categories);
   cacheLife("hours");
 
+  if (isBackoffice()) return orEmptyDuringBuild(boNavigation, [], "menú");
   if (!hasSupabase) {
     return buildNav(
       demoDb().categories.filter((c) => c.active).map((c) => ({
@@ -86,6 +90,8 @@ export async function getPaymentPromos(): Promise<PaymentPromo[]> {
   cacheTag(TAGS.promos);
   cacheLife("minutes");
 
+  // Back office: las promos de cuotas llegan en la fase C
+  if (isBackoffice()) return [];
   if (!hasSupabase) {
     return demoDb()
       .promos.filter((p) => p.active && withinDates(p.startsAt, p.endsAt))
@@ -125,6 +131,8 @@ export async function getTopbarMessages(): Promise<TopbarMessage[]> {
   cacheTag(TAGS.promos);
   cacheLife("minutes");
 
+  // Back office: los mensajes de la barra superior llegan en la fase C
+  if (isBackoffice()) return [];
   if (!hasSupabase) {
     return demoDb()
       .topbar.filter((m) => m.active)
@@ -149,6 +157,15 @@ export async function getSettings(): Promise<StoreSettings> {
   cacheTag(TAGS.settings);
   cacheLife("hours");
 
+  if (isBackoffice()) {
+    const blank: StoreSettings = {
+      whatsapp: { number: "", display: "" },
+      store: { address: "", city: "", province: "", hours: "", hoursDetail: "", instagram: "", email: "" },
+      newsletterPopup: { ...DEFAULT_SETTINGS.newsletterPopup, enabled: false },
+      tax: DEFAULT_SETTINGS.tax,
+    };
+    return orEmptyDuringBuild(boSettings, blank, "configuración");
+  }
   if (!hasSupabase) {
     const st = demoDb().settings;
     return {
