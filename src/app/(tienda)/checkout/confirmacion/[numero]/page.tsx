@@ -16,7 +16,6 @@ const BRAND_LABEL: Record<string, string> = {
   visa: "Visa",
   master: "Mastercard",
   naranja: "Naranja",
-  tarjeta_verde: "Tarjeta Verde",
   visa_debito: "Visa Débito",
   master_debito: "Débito Mastercard",
   efectivo: "Efectivo (Pago Fácil o Rapipago)",

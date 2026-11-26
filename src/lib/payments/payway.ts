@@ -6,7 +6,7 @@ import type { CreatePaymentInput, PaymentProvider, PaymentResult, PaymentStatus 
  *
  * TODO(Fase 6) antes de producción, confirmar con la documentación y el comercio:
  *  - URL base de sandbox y producción, y el header de autenticación.
- *  - IDs de medio de pago de cada tarjeta (PAYMENT_METHOD_IDS) y si Tarjeta Verde opera por Payway.
+ *  - IDs de medio de pago de cada tarjeta (PAYMENT_METHOD_IDS).
  *  - Que los planes de cuotas S/I configurados en la cuenta coincidan con `payment_promos`.
  *  - Formato del importe (centavos) y de la notificación (webhook) y cómo se firma.
  */
@@ -21,7 +21,6 @@ export const PAYMENT_METHOD_IDS: Record<string, number | undefined> = {
   master: 104,
   naranja: 24,
   visa_debito: 31,
-  tarjeta_verde: undefined, // a confirmar
 };
 
 function mapStatus(s: string | undefined): PaymentStatus {

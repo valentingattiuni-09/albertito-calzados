@@ -10,7 +10,7 @@ import { recordPayment, type OrderView } from "./orders";
 /** method "efectivo": cupón para Pago Fácil o Rapipago (sin tarjeta). */
 export type PaymentInput = { method?: "tarjeta" | "efectivo"; token: string; brand: string; installments: number; bin?: string };
 
-export const CARD_BRANDS = ["visa", "master", "naranja", "tarjeta_verde", "visa_debito", "master_debito"] as const;
+export const CARD_BRANDS = ["visa", "master", "naranja", "visa_debito", "master_debito"] as const;
 
 /** Cuotas permitidas para una marca y un total: 1 pago siempre, más las promos S/I vigentes que apliquen. */
 export async function allowedInstallments(brand: string, total: number): Promise<{ installments: number; interestFree: boolean }[]> {

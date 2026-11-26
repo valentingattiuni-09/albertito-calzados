@@ -22,7 +22,6 @@ import { deleteAction, reorderAction, savePromoAction, saveTopbarAction, toggleA
 const PROVIDERS = [
   ["visa", "Visa"],
   ["master", "Mastercard"],
-  ["tarjeta_verde", "Tarjeta Verde"],
   ["naranja", "Naranja"],
   ["go_cuotas", "Go Cuotas"],
 ] as const;

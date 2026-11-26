@@ -137,8 +137,8 @@ create table search_synonyms (
 -- ---------------------------------------------------------------------------
 create table payment_promos (
   id uuid primary key default gen_random_uuid(),
-  provider text not null,                          -- visa, master, tarjeta_verde, naranja, go_cuotas…
-  label text not null,                             -- "Visa", "Mastercard", "Tarjeta Verde"
+  provider text not null,                          -- visa, master, naranja, go_cuotas…
+  label text not null,                             -- "Visa", "Mastercard", "Naranja"
   installments int not null check (installments >= 1),
   interest_free boolean not null default true,
   min_amount integer not null default 0,

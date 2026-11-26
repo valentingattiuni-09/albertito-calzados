@@ -12,7 +12,7 @@ export type CreatePaymentInput = {
   amount: number;
   installments: number;
   interestFree: boolean;
-  /** visa, master, naranja, tarjeta_verde, debito… */
+  /** visa, master, naranja, debito… */
   cardBrand: string;
   /** Token de un solo uso generado en el navegador */
   token: string;

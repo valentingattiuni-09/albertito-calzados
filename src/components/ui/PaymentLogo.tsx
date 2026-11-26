@@ -2,7 +2,7 @@ import Image from "next/image";
 import { paymentLogo } from "@/lib/payment-logos";
 
 /**
- * Logo de un medio de pago. Si no hay logo (ej. Tarjeta Verde, Go Cuotas) muestra el nombre.
+ * Logo de un medio de pago. Si no hay logo (ej. Go Cuotas) muestra el nombre.
  * La altura se controla con `className` (ej. "h-5"); el ancho se ajusta solo.
  */
 export function PaymentLogo({

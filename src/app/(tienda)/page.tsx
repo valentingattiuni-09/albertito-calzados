@@ -3,7 +3,6 @@ import { BenefitsRow, PaymentPromosBlock, SectionCards, SectionTitle, StoryBlock
 import { Carousel } from "@/components/home/Carousel";
 import { Hero } from "@/components/home/Hero";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
-import { SizeFinder } from "@/components/home/SizeFinder";
 import { VideoCarousel } from "@/components/home/VideoCarousel";
 import { ProductCard } from "@/components/product/ProductCard";
 import { getCatalog } from "@/lib/data/catalog";
@@ -40,13 +39,6 @@ export default async function HomePage() {
     .slice(0, 12);
   const seleccion = catalog.filter((p) => p.line === "seleccion").sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured)).slice(0, 8);
 
-  // Grupos de talles para "Elegí tu talle", desde los rangos de cada sección
-  const sizesOf = (slugs: string[]) =>
-    [...new Set(nav.filter((s) => slugs.includes(s.slug)).flatMap((s) => s.sizeRange))].sort((a, b) => Number(a) - Number(b));
-  const sizeGroups = [
-    { label: "Niños", sizes: sizesOf(["ninos"]) },
-    { label: "Adultos", sizes: sizesOf(["mujer", "hombre", "alpargatas"]) },
-  ].filter((g) => g.sizes.length > 0);
 
   return (
     <>
@@ -95,13 +87,7 @@ export default async function HomePage() {
         {/* 7. Medios de pago */}
         <PaymentPromosBlock promos={promos} />
 
-        {/* 8. Elegí tu talle */}
-        <section aria-labelledby="talle-home" className="mx-auto max-w-tienda px-4 lg:px-6">
-          <SectionTitle id="talle-home">Elegí tu talle</SectionTitle>
-          <SizeFinder groups={sizeGroups} promos={promos} />
-        </section>
-
-        {/* 9. Selección Albertito */}
+        {/* 8. Selección Albertito */}
         {seleccion.length > 0 && (
           <section aria-labelledby="seleccion" className="mx-auto max-w-tienda px-4 lg:px-6">
             <div className="rounded-xl border-2 border-azul p-4 sm:p-8">
@@ -124,10 +110,10 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* 10. Historia */}
+        {/* 9. Historia */}
         <StoryBlock instagram={settings.store.instagram} address={settings.store.address} city={settings.store.city} />
 
-        {/* 11. Newsletter */}
+        {/* 10. Newsletter */}
         <section aria-labelledby="newsletter-home" className="mx-auto max-w-tienda px-4 lg:px-6">
           <div className="grid gap-6 rounded-xl border border-azul/15 p-5 sm:p-8 md:grid-cols-2 md:gap-12">
             <div>

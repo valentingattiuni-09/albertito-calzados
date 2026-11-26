@@ -25,7 +25,6 @@ const BRANDS: { id: string; label: string; tag?: string }[] = [
   { id: "visa", label: "Visa", tag: "Crédito" },
   { id: "master", label: "Mastercard", tag: "Crédito" },
   { id: "naranja", label: "Naranja" },
-  { id: "tarjeta_verde", label: "Tarjeta Verde" },
   { id: "visa_debito", label: "Visa Débito", tag: "Débito" },
   { id: "master_debito", label: "Maestro / Master Débito", tag: "Débito" },
 ];

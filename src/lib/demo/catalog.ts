@@ -325,7 +325,6 @@ export type DemoPromo = {
 export const demoPromos: DemoPromo[] = [
   { provider: "visa", label: "Visa", installments: 3, active: true },
   { provider: "master", label: "Mastercard", installments: 3, active: true },
-  { provider: "tarjeta_verde", label: "Tarjeta Verde", installments: 3, active: true },
   { provider: "naranja", label: "Naranja", installments: 5, active: true },
   // Go Cuotas: cargado pero inactivo hasta que se defina
   { provider: "go_cuotas", label: "Go Cuotas", installments: 4, active: false },

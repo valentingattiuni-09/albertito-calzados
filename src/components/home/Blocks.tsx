@@ -34,7 +34,7 @@ export function SectionTitle({
 
 /** Fila de beneficios (sale de las promos activas). */
 export function BenefitsRow({ promos }: { promos: PaymentPromo[] }) {
-  // Agrupa por cantidad de cuotas: "3 S/I con Visa, Mastercard y Tarjeta Verde"
+  // Agrupa por cantidad de cuotas: "3 S/I con Visa y Mastercard"
   const groups = new Map<number, PaymentPromo[]>();
   promos
     .filter((p) => p.interestFree && p.installments > 1)

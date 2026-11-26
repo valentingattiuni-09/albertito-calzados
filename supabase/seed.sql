@@ -2031,9 +2031,8 @@ insert into product_variants (id, product_id, color_id, size, size_sort, sku, st
 insert into payment_promos (id, provider, label, installments, interest_free, min_amount, logo_url, show_in_topbar, active, "order") values
   ('1c90547d-6d5d-4c99-ada2-5a5cae816ce8', 'visa', 'Visa', 3, true, 0, null, true, true, 0),
   ('a4a0f975-d110-44d8-a60c-e514d105e8c8', 'master', 'Mastercard', 3, true, 0, null, true, true, 1),
-  ('54d7e299-4f5f-41a3-a846-969af315e833', 'tarjeta_verde', 'Tarjeta Verde', 3, true, 0, null, true, true, 2),
-  ('faa1ac1c-ec65-4ce0-ab4d-0fea6624ee12', 'naranja', 'Naranja', 5, true, 0, null, true, true, 3),
-  ('754dd18d-0dcb-4293-a313-6b320397389f', 'go_cuotas', 'Go Cuotas', 4, true, 0, null, true, false, 4);
+  ('faa1ac1c-ec65-4ce0-ab4d-0fea6624ee12', 'naranja', 'Naranja', 5, true, 0, null, true, true, 2),
+  ('754dd18d-0dcb-4293-a313-6b320397389f', 'go_cuotas', 'Go Cuotas', 4, true, 0, null, true, false, 3);
 
 insert into topbar_messages (id, text, link, "order", active) values
   ('1cf9e687-59be-4f5e-a4db-92da53c848f8', 'Envíos a todo el país con Andreani y Correo Argentino', null, 0, true);

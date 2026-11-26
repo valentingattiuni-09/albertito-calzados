@@ -20,7 +20,7 @@ Checklist:
 - [ ] Pedirle a Payway las credenciales de sandbox y la documentación vigente de la API de pagos y del SDK JS de tokenización.
 - [ ] **Tokenización en el navegador** (`tokenizeCard` en `client.ts`, rama `payway`): cargar el SDK y generar el token con la clave pública. Hoy tira "Payway todavía no está conectado".
 - [ ] Confirmar la URL base y el header de autenticación (`payway.ts` usa `apikey` y la API v2 de Decidir).
-- [ ] Confirmar los **IDs de medio de pago** (`PAYMENT_METHOD_IDS`): Visa, Mastercard, Naranja, débitos y **si Tarjeta Verde opera por Payway**.
+- [ ] Confirmar los **IDs de medio de pago** (`PAYMENT_METHOD_IDS`): Visa, Mastercard, Naranja, débitos.
 - [ ] Configurar en la cuenta los planes de cuotas S/I y cargar el `paywayPlanId` de cada promo en el panel. Si el plan requiere otro campo en el pago (`installments` o `establishment_name`), agregarlo en `createPayment`.
 - [ ] Confirmar el formato del importe (hoy se manda en centavos).
 - [ ] **Webhook**: configurar la URL `https://<dominio>/api/webhooks/payway` y validar la firma u origen según Payway en `parseNotification` (hoy siempre reconsulta el estado antes de registrar).
