@@ -1,15 +1,14 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
-import { TABLE_TAGS, TAGS } from "@/lib/data/tags";
+import { secretMatches, TABLE_TAGS, TAGS } from "@/lib/data/tags";
 
 /**
- * Webhook de Supabase (Database → Webhooks) → invalida la caché de la tienda.
- * Configurar: POST https://<dominio>/api/revalidate con header `x-revalidate-secret`.
+ * Aviso de cambios (el back office de Albertito o el webhook de Supabase) → invalida la caché de la tienda.
+ * Configurar: POST https://<dominio>/api/revalidate con header `x-revalidate-secret` (comparado en tiempo constante).
  * Body (formato Supabase): { type, table, record, old_record }
  */
 export async function POST(req: NextRequest) {
-  const secret = process.env.REVALIDATE_SECRET;
-  if (!secret || req.headers.get("x-revalidate-secret") !== secret) {
+  if (!secretMatches(process.env.REVALIDATE_SECRET, req.headers.get("x-revalidate-secret"))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

@@ -1,12 +1,13 @@
 import "server-only";
-import type { NavSection, ProductCard, ProductDetail, StoreSettings } from "@/lib/data/types";
+import type { NavSection, PaymentPromo, ProductCard, ProductDetail, StoreSettings, TopbarMessage } from "@/lib/data/types";
 import type { LiveVariant } from "@/lib/orders/live";
 import { safeMediaUrl } from "@/lib/media";
 import { normalize } from "@/lib/search/normalize";
 import { backoffice } from "./client";
-import type { BoCatalogPage, BoDetail, BoLookup, BoNavSection, BoSettings } from "./dto";
+import type { BoCatalogPage, BoDetail, BoHomeBanner, BoLookup, BoNavSection, BoPaymentPromo, BoSettings, BoTopbarMessage } from "./dto";
 import { BackofficeNotFoundError } from "./http";
-import { categoryNames, toCard, toDetail, toLiveVariant, toNavigation, toSettings } from "./map";
+import { categoryNames, toCard, toDetail, toHomeBanners, toLiveVariant, toNavigation, toPaymentPromos, toSettings, toTopbar } from "./map";
+import type { HomeBanner } from "@/lib/data/home";
 
 const deps = { normalize, media: safeMediaUrl };
 
@@ -49,3 +50,19 @@ export async function boLiveVariants(ids: string[]): Promise<Map<string, LiveVar
 export async function boSettings(): Promise<StoreSettings> {
   return toSettings(await backoffice().get<BoSettings>("/store/settings"));
 }
+
+// ---------- Contenido (fase C): decorativo, así que si la API falla y no hay copia, la tienda sigue sin él ----------
+
+async function decorative<T>(what: string, read: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await read();
+  } catch (e) {
+    if (process.env.NEXT_PHASE === "phase-production-build") throw e; // en el build lo maneja orEmptyDuringBuild
+    console.warn(`[back office] ${what}: ${(e as Error).message}. Se muestra sin ${what}.`);
+    return [];
+  }
+}
+
+export const boHomeBanners = (): Promise<HomeBanner[]> => decorative("banners", async () => toHomeBanners(await backoffice().get<BoHomeBanner[]>("/store/home-banners"), deps));
+export const boTopbar = (): Promise<TopbarMessage[]> => decorative("barra superior", async () => toTopbar(await backoffice().get<BoTopbarMessage[]>("/store/topbar")));
+export const boPaymentPromos = (): Promise<PaymentPromo[]> => decorative("promos de cuotas", async () => toPaymentPromos(await backoffice().get<BoPaymentPromo[]>("/store/payment-promos")));

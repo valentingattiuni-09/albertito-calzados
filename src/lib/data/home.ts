@@ -4,6 +4,8 @@ import { demoDb, withinDates } from "@/lib/demo/db";
 import { safeMediaUrl } from "@/lib/media";
 import { hasSupabase, publicClient } from "@/lib/supabase/clients";
 import { isBackoffice } from "@/lib/backoffice/source";
+import { orEmptyDuringBuild } from "@/lib/backoffice/build";
+import { boHomeBanners } from "@/lib/backoffice/store";
 import { getCatalog } from "./catalog";
 import { TAGS } from "./tags";
 import type { ProductCard } from "./types";
@@ -34,8 +36,8 @@ export async function getHomeBanners(): Promise<HomeBanner[]> {
   cacheTag(TAGS.home);
   cacheLife("minutes");
 
-  // Back office: banners del hero en la fase C
-  if (isBackoffice()) return [];
+  // Back office (fase C): los banners vigentes de la API
+  if (isBackoffice()) return orEmptyDuringBuild(boHomeBanners, [], "banners");
   if (!hasSupabase) {
     return demoDb()
       .banners.filter((b) => b.active && withinDates(b.startsAt, b.endsAt))

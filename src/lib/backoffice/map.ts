@@ -2,9 +2,10 @@
  * Mapeo de la API del back office a los tipos de la tienda (src/lib/data/types.ts, sin cambiarlos).
  * Puro (sin imports de ejecución) para poder testearlo con node --test: las dos utilidades de la tienda que usa se inyectan.
  */
-import type { NavSection, ProductCard, ProductDetail, StoreSettings } from "@/lib/data/types";
+import type { NavSection, PaymentPromo, ProductCard, ProductDetail, StoreSettings, TopbarMessage } from "@/lib/data/types";
+import type { HomeBanner } from "@/lib/data/home";
 import type { LiveVariant } from "@/lib/orders/live";
-import type { BoCard, BoDetail, BoLiveVariant, BoNavSection, BoSettings } from "./dto";
+import type { BoCard, BoDetail, BoHomeBanner, BoLiveVariant, BoNavSection, BoPaymentPromo, BoSettings, BoTopbarMessage } from "./dto";
 
 export type MapDeps = {
   /** normalize() de src/lib/search/normalize.ts */
@@ -107,4 +108,30 @@ export function toLiveVariant(v: BoLiveVariant, deps: Pick<MapDeps, "media">): L
 
 export function toSettings(s: BoSettings): StoreSettings {
   return { whatsapp: { ...s.whatsapp }, store: { ...s.store }, newsletterPopup: { ...s.newsletterPopup }, tax: { ...s.tax } };
+}
+
+// ---------- Contenido (fase C) ----------
+
+/**
+ * Banners del home: cada foto tiene que pasar TAL CUAL el filtro de hosts permitidos (si el filtro la cambia por la imagen genérica, el banner no se
+ * muestra: un banner con un ícono en lugar de la foto es peor que ninguno). La API manda solo los vigentes.
+ */
+export function toHomeBanners(list: BoHomeBanner[], deps: Pick<MapDeps, "media">): HomeBanner[] {
+  const allowed = (u: string) => (deps.media(u) === u ? u : null);
+  return list
+    .map((b) => ({ id: b.id, imageDesktop: allowed(b.imageDesktop), imageMobile: allowed(b.imageMobile), videoUrl: null, title: b.title, alt: b.alt || b.title, link: safeLink(b.link) }))
+    .filter((b) => b.imageDesktop && b.imageMobile);
+}
+
+/** Mensajes de la barra superior */
+export const toTopbar = (list: BoTopbarMessage[]): TopbarMessage[] => list.map((m) => ({ id: m.id, text: m.text, link: safeLink(m.link) }));
+
+/** Promos de cuotas: la API ya manda la forma de la tienda (salen de los planes que acepta el checkout). */
+export const toPaymentPromos = (list: BoPaymentPromo[]): PaymentPromo[] =>
+  list.map((p) => ({ id: p.id, provider: p.provider, label: p.label, installments: p.installments, interestFree: p.interestFree, minAmount: p.minAmount, logoUrl: null, showInTopbar: p.showInTopbar }));
+
+/** Solo links internos o https (lo valida también el back office): cualquier otra cosa se descarta */
+export function safeLink(link: string | null | undefined): string | null {
+  if (!link) return null;
+  return /^(\/(?!\/)[A-Za-z0-9\-._~/?=&%#]*|https:\/\/[^\s"'<>]+)$/.test(link) ? link : null;
 }

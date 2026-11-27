@@ -2,7 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { hasSupabase, publicClient } from "@/lib/supabase/clients";
 import { isBackoffice } from "@/lib/backoffice/source";
-import { boNavigation, boSettings } from "@/lib/backoffice/store";
+import { boNavigation, boPaymentPromos, boSettings, boTopbar } from "@/lib/backoffice/store";
 import { orEmptyDuringBuild } from "@/lib/backoffice/build";
 import { TAGS } from "./tags";
 import type { NavSection, PaymentPromo, StoreSettings, TopbarMessage } from "./types";
@@ -90,8 +90,8 @@ export async function getPaymentPromos(): Promise<PaymentPromo[]> {
   cacheTag(TAGS.promos);
   cacheLife("minutes");
 
-  // Back office: las promos de cuotas llegan en la fase C
-  if (isBackoffice()) return [];
+  // Back office (fase C): salen de los planes de cuotas que acepta el checkout
+  if (isBackoffice()) return orEmptyDuringBuild(boPaymentPromos, [], "promos de cuotas");
   if (!hasSupabase) {
     return demoDb()
       .promos.filter((p) => p.active && withinDates(p.startsAt, p.endsAt))
@@ -131,8 +131,8 @@ export async function getTopbarMessages(): Promise<TopbarMessage[]> {
   cacheTag(TAGS.promos);
   cacheLife("minutes");
 
-  // Back office: los mensajes de la barra superior llegan en la fase C
-  if (isBackoffice()) return [];
+  // Back office (fase C): los mensajes vigentes de la API
+  if (isBackoffice()) return orEmptyDuringBuild(boTopbar, [], "barra superior");
   if (!hasSupabase) {
     return demoDb()
       .topbar.filter((m) => m.active)

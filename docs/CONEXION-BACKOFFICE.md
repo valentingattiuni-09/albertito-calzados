@@ -55,9 +55,24 @@ Variables nuevas (navegador, públicas): `NEXT_PUBLIC_PAYWAY_SDK_URL` y `NEXT_PU
 
 Pendiente de contenido: las páginas «Cómo comprar» y las preguntas frecuentes todavía mencionan el pago en efectivo.
 
-### Lo que viene
+### Contenido desde el back office (fase C)
 
-- **Fase C:** banners, videos, promos de cuotas, barra superior, newsletter y cupones desde el back office; alta y seguimiento de envíos; el back office avisa a `/api/revalidate` cuando cambia algo.
+| Qué | Cómo |
+|---|---|
+| Banners del home | `GET /store/home-banners` (solo los vigentes, en orden): foto de escritorio 8:3 y de celular 1:1, título, alt y link. Un banner cuya foto no pasa el filtro de `IMAGE_HOSTS` no se muestra (mejor ninguno que un ícono). |
+| Barra superior | `GET /store/topbar`: los mensajes vigentes. Las promos de cuotas marcadas para la barra se suman como siempre (`showInTopbar`). |
+| Promos de cuotas | `GET /store/payment-promos`, en la forma `PaymentPromo` de siempre. Salen de los **planes de cuotas que acepta el checkout**: la tienda nunca promete cuotas que después el pago rechaza. |
+| Aviso de cambios | El back office llama `POST /api/revalidate` cuando el equipo cambia productos, stock, categorías, configuración, banners, barra o planes. El secreto (`REVALIDATE_SECRET`, el mismo que `WEB_REVALIDATE_SECRET` del back office) se compara en tiempo constante. `payment_plans` invalida las promos. |
+| Si la API falla | Banners, barra y promos son decorativos: sin respuesta ni copia, el home se muestra sin ellos. |
+
+Links: solo internos (`/…`) o https; cualquier otra cosa se descarta (también lo valida el back office).
+
+### Lo que viene (después del lanzamiento)
+
+- Videos del home y video en el banner.
+- Newsletter.
+- Cupones.
+- Alta automática y seguimiento de envíos con Andreani y Correo Argentino.
 
 ## Las 3 conexiones
 

@@ -72,3 +72,8 @@ export type BoSettings = {
   newsletterPopup: { title: string; text: string; delaySeconds: number; enabled: boolean };
   tax: { factor: number; label: string };
 };
+
+/** Fase C: contenido de la tienda */
+export type BoHomeBanner = { id: string; title: string; alt: string; link: string | null; imageDesktop: string; imageMobile: string };
+export type BoTopbarMessage = { id: string; text: string; link: string | null };
+export type BoPaymentPromo = { id: string; provider: string; label: string; installments: number; interestFree: boolean; minAmount: number; logoUrl: string | null; showInTopbar: boolean };
