@@ -14,6 +14,8 @@ import type { PaymentPromo } from "@/lib/data/types";
 import { formatPrice } from "@/lib/format";
 import { CASH_DAYS } from "@/lib/payments/cash-info";
 import { detectBrand, tokenizeCard, validateCard, type CardInput } from "@/lib/payments/client";
+import { BoPaymentStep, type PaymentRequest, type PayResponse } from "@/components/checkout/BoPaymentStep";
+import { branchProviderOf } from "@/lib/backoffice/checkout-map";
 
 const PROVINCES = [
   "San Luis", "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy",
@@ -77,11 +79,26 @@ function StepHeader({ n, title, done, open, onEdit }: { n: number; title: string
   );
 }
 
+const ORDER_KEY = "albertito:orderKey";
+/** Idempotency-Key del pedido en curso: reintentar por un corte (o recargar) repite el MISMO pedido en el back office en vez de crear otro */
+function orderKey(reset = false): string {
+  try {
+    const k = sessionStorage.getItem(ORDER_KEY);
+    if (k && !reset) return k;
+    const n = crypto.randomUUID();
+    sessionStorage.setItem(ORDER_KEY, n);
+    return n;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
 /**
  * Checkout en una página, 3 pasos: Tus datos → Entrega → Pago. Resumen siempre visible
  * (a la derecha en desktop, abajo en mobile). Todo se vuelve a validar en el servidor.
+ * `backoffice`: el pedido y el pago los hace la API de la tienda (sin efectivo, cupón ni cuenta; sucursales con provincia para Correo Argentino).
  */
-export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[]; storeAddress: string }) {
+export function CheckoutForm({ promos, storeAddress, backoffice = false }: { promos: PaymentPromo[]; storeAddress: string; backoffice?: boolean }) {
   const id = useId();
   const router = useRouter();
   const items = useCartItems();
@@ -107,6 +124,10 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
   const [notices, setNotices] = useState<string[]>([]);
   const [pendingOrder, setPendingOrder] = useState<{ number: string; accessToken: string } | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  // Back office: sucursales (se piden aparte; Correo Argentino necesita la provincia) y el pedido ya creado (para reintentar el pago sobre el mismo)
+  const [branchesState, setBranchesState] = useState<{ key: string; list: { id: string; name: string; address: string }[] | null; msg: string | null } | null>(null);
+  const [branchProvince, setBranchProvince] = useState("");
+  const [boOrder, setBoOrder] = useState<string | null>(null);
 
   // Validar stock y precio al entrar
   useEffect(() => {
@@ -129,6 +150,30 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
   }, []);
 
   const option = quote?.options.find((o) => o.id === prefs.optionId) ?? null;
+  const branchSource = backoffice && option ? branchProviderOf(option.id) : null;
+  // Las sucursales valen solo para la consulta que las pidió (empresa + CP + provincia)
+  const branchesKey = branchSource && prefs.cp && (!branchSource.needsProvince || branchProvince) ? `${option?.id}|${prefs.cp}|${branchProvince}` : null;
+  const current = branchesState && branchesState.key === branchesKey ? branchesState : null;
+  const boBranches = current?.list ?? null;
+  const branchesMsg = current?.msg ?? null;
+
+  // Back office: al elegir una sucursal, se piden las sucursales de esa empresa (Correo Argentino, recién con la provincia)
+  useEffect(() => {
+    if (!branchesKey) return;
+    let cancel = false;
+    fetch("/api/shipping/branches", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ optionId: option?.id, cp: prefs.cp, province: branchProvince || undefined }) })
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancel) return;
+        if (d.branches) setBranchesState({ key: branchesKey, list: d.branches, msg: d.branches.length ? null : "No hay sucursales para ese código postal. Elegí otra forma de envío." });
+        else setBranchesState({ key: branchesKey, list: null, msg: d.error ?? "No pudimos traer las sucursales." });
+      })
+      .catch(() => !cancel && setBranchesState({ key: branchesKey, list: null, msg: "No pudimos traer las sucursales. Revisá tu conexión." }));
+    return () => {
+      cancel = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchesKey]);
   const subtotal = items.reduce((n, i) => n + i.price * i.qty, 0);
   const discount = coupon?.discount ?? 0;
   const total = subtotal - discount + (option?.price ?? 0);
@@ -145,6 +190,11 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
   const plan = plans.find((p) => p.installments === installments) ?? plans[0];
 
   const go = (n: number) => {
+    // Back office: si cambian los datos o la entrega, el pago va sobre un pedido nuevo
+    if (backoffice && n < 3 && boOrder) {
+      setBoOrder(null);
+      orderKey(true);
+    }
     setStep(n);
     setMaxStep((m) => Math.max(m, n));
     requestAnimationFrame(() => document.getElementById(`${id}-step-${n}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
@@ -170,6 +220,8 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
       if (!address.city.trim()) e.city = "Completá la localidad.";
     } else if (option.service === "sucursal" && option.branches?.length && !option.branches.some((b) => b.id === branchId)) {
       e.branch = "Elegí la sucursal.";
+    } else if (backoffice && option.service === "sucursal" && !boBranches?.some((b) => b.id === branchId)) {
+      e.branch = branchSource?.needsProvince && !branchProvince ? "Elegí la provincia y la sucursal." : "Elegí la sucursal.";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -261,6 +313,36 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
     }
   };
 
+  // Back office: crea el pedido (o lo repite con la misma clave) y paga; con el pedido ya creado, reintenta el pago sobre el mismo
+  const boSubmit = async (p: PaymentRequest): Promise<PayResponse> => {
+    const post = (url: string, body: unknown) => fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json() as Promise<PayResponse>);
+    const input = {
+      customer,
+      items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })),
+      shipping: { optionId: option?.id ?? "", cp: prefs.cp, price: option?.price ?? 0, branchId, province: branchProvince || undefined, address: option?.service === "domicilio" ? address : undefined },
+    };
+    let res = boOrder ? await post("/api/checkout/pay", { number: boOrder, payment: p }) : await post("/api/checkout", { input, orderKey: orderKey(), payment: p });
+    if (res.action === "retry_new_key") res = await post("/api/checkout", { input, orderKey: orderKey(true), payment: p });
+    if (res.number) setBoOrder(res.number);
+    return res;
+  };
+  const boDone = (res: PayResponse) => {
+    setShippingPrefs({ optionId: null });
+    router.push(`/checkout/confirmacion/${res.number}`);
+  };
+  const boFailure = async (res: PayResponse) => {
+    if (res.action === "go_confirmation" && (res.number ?? boOrder)) return router.push(`/checkout/confirmacion/${res.number ?? boOrder}`);
+    if (res.action === "new_order") {
+      setBoOrder(null);
+      orderKey(true);
+    }
+    if (res.action === "sync_cart") {
+      const r = await syncCart(items);
+      setNotices(r.notices.length ? r.notices : [res.message ?? ""]);
+    }
+    if (res.step && res.step < 3) go(res.step);
+  };
+
   if (hydrated && items.length === 0) {
     return (
       <div className="py-16 text-center">
@@ -315,10 +397,12 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
               <Field id={`${id}-phone`} label="Teléfono (con característica)" error={errors.phone}>
                 <input id={`${id}-phone`} type="tel" autoComplete="tel" placeholder="2657 123456" className={input} value={customer.phone} onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} {...err("phone")} />
               </Field>
-              <label className="flex items-start gap-2 text-sm sm:col-span-2">
-                <input type="checkbox" checked={createAccount} onChange={(e) => setCreateAccount(e.target.checked)} className="mt-0.5 size-5 accent-azul" />
-                Crear mi cuenta con estos datos para seguir mis pedidos
-              </label>
+              {!backoffice && (
+                <label className="flex items-start gap-2 text-sm sm:col-span-2">
+                  <input type="checkbox" checked={createAccount} onChange={(e) => setCreateAccount(e.target.checked)} className="mt-0.5 size-5 accent-azul" />
+                  Crear mi cuenta con estos datos para seguir mis pedidos
+                </label>
+              )}
               <button type="submit" className="h-12 rounded-md bg-rojo text-base font-bold uppercase text-blanco sm:col-span-2">
                 Continuar
               </button>
@@ -389,6 +473,35 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
                 </Field>
               )}
 
+              {backoffice && option?.service === "sucursal" && (
+                <div className="space-y-4">
+                  {branchSource?.needsProvince && (
+                    <Field id={`${id}-branch-province`} label="Provincia de la sucursal">
+                      <select id={`${id}-branch-province`} className={input} value={branchProvince} onChange={(e) => { setBranchProvince(e.target.value); setBranchId(""); }}>
+                        <option value="">Elegí la provincia</option>
+                        {PROVINCES.map((p) => (
+                          <option key={p}>{p}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+                  {branchesMsg && <p className="text-sm font-semibold text-rojo">{branchesMsg}</p>}
+                  {boBranches && boBranches.length > 0 && (
+                    <Field id={`${id}-branch`} label="Elegí la sucursal" error={errors.branch}>
+                      <select id={`${id}-branch`} className={input} value={branchId} onChange={(e) => setBranchId(e.target.value)} {...err("branch")}>
+                        <option value="">Elegí una sucursal</option>
+                        {boBranches.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name} · {b.address}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  )}
+                  {!boBranches?.length && errors.branch && <p className="text-sm font-semibold text-rojo">{errors.branch}</p>}
+                </div>
+              )}
+
               {option?.service === "retiro" && (
                 <p className="rounded-md border border-azul/15 p-3 text-sm">
                   Retirás gratis en <strong>{storeAddress}</strong>. Te avisamos por mail cuando esté listo. Traé tu DNI.
@@ -410,6 +523,7 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
                 {option.label}
                 {option.service === "domicilio" && ` · ${address.street} ${address.number}, ${address.city}`}
                 {option.service === "sucursal" && option.branches?.find((b) => b.id === branchId) && ` · ${option.branches.find((b) => b.id === branchId)!.name}`}
+                {backoffice && option.service === "sucursal" && boBranches?.find((b) => b.id === branchId) && ` · ${boBranches.find((b) => b.id === branchId)!.name}`}
               </p>
             )
           )}
@@ -418,7 +532,8 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
         {/* PASO 3 */}
         <section id={`${id}-step-3`} aria-label="Paso 3: pago" className="scroll-mt-40 rounded-xl border border-azul/15 p-4 sm:p-6">
           <StepHeader n={3} title="Pago" done={false} open={step === 3} onEdit={() => go(3)} />
-          {step === 3 && (
+          {step === 3 && backoffice && <BoPaymentStep total={total} submit={boSubmit} onDone={boDone} onFailure={(r) => void boFailure(r)} />}
+          {step === 3 && !backoffice && (
             <form
               className="mt-5 space-y-5"
               onSubmit={(e) => {
@@ -631,6 +746,7 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
           ))}
         </ul>
 
+        {!backoffice && (
         <form
           className="mt-5 flex gap-2"
           onSubmit={(e) => {
@@ -646,7 +762,8 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
             Aplicar
           </button>
         </form>
-        {couponMsg && <p className="mt-1 text-xs font-semibold">{couponMsg}</p>}
+        )}
+        {!backoffice && couponMsg && <p className="mt-1 text-xs font-semibold">{couponMsg}</p>}
 
         <dl className="mt-5 space-y-1.5 border-t border-azul/10 pt-4 text-sm">
           <div className="flex justify-between">
@@ -667,7 +784,7 @@ export function CheckoutForm({ promos, storeAddress }: { promos: PaymentPromo[];
             <dt className="font-bold uppercase">Total</dt>
             <dd className="text-2xl font-bold">{formatPrice(total)}</dd>
           </div>
-          {method === "tarjeta" && plan.installments > 1 && (
+          {!backoffice && method === "tarjeta" && plan.installments > 1 && (
             <p className="flex flex-wrap items-center justify-end gap-x-2 text-right text-sm font-medium">
               <span>
                 {plan.installments} cuotas sin interés de {formatPrice(Math.ceil(total / plan.installments))}

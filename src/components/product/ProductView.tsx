@@ -26,9 +26,11 @@ type Props = {
   storeAddress: string;
   /** Fase A con el back office: compras y cotización de envío apagadas (se muestra este aviso) */
   checkoutClosed?: string;
+  /** false con el back office: no hay pago en efectivo */
+  cashAvailable?: boolean;
 };
 
-export function ProductView({ product: p, promos, initialColor, whatsappNumber, taxFactor, kids, storeAddress, checkoutClosed }: Props) {
+export function ProductView({ product: p, promos, initialColor, whatsappNumber, taxFactor, kids, storeAddress, checkoutClosed, cashAvailable = true }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [color, setColor] = useState(initialColor);
@@ -128,7 +130,7 @@ export function ProductView({ product: p, promos, initialColor, whatsappNumber, 
           </div>
 
           <div className="mt-5">
-            <PaymentsInfo price={p.price} promos={promos} />
+            <PaymentsInfo price={p.price} promos={promos} cash={cashAvailable} />
           </div>
 
           {/* Color */}

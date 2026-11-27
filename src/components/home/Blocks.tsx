@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CardIcon, ChevronRightIcon, InstagramIcon, SwapIcon, TruckIcon } from "@/components/ui/icons";
+import { isBackoffice } from "@/lib/backoffice/source";
 import { PaymentLogo } from "@/components/ui/PaymentLogo";
 import type { NavSection, PaymentPromo } from "@/lib/data/types";
 import { formatPrice } from "@/lib/format";
@@ -52,7 +53,8 @@ export function BenefitsRow({ promos }: { promos: PaymentPromo[] }) {
         </span>
       ),
     })),
-    { icon: <CardIcon />, title: "Pagá en efectivo", text: "Pago Fácil y Rapipago" },
+    // Con el back office no hay efectivo
+    ...(isBackoffice() ? [{ icon: <CardIcon />, title: "Pagá con Mercado Pago", text: "O con tu tarjeta, en la tienda" }] : [{ icon: <CardIcon />, title: "Pagá en efectivo", text: "Pago Fácil y Rapipago" }]),
     { icon: <TruckIcon />, title: "Envíos a todo el país", text: "Andreani y Correo Argentino" },
     { icon: <SwapIcon />, title: "Cambiá gratis en el local", text: "Edison 15, Villa Mercedes" },
   ];
@@ -132,6 +134,7 @@ export function PaymentPromosBlock({ promos }: { promos: PaymentPromo[] }) {
             </p>
           </li>
         ))}
+        {!isBackoffice() && (
         <li className={`flex flex-col justify-between rounded-lg border border-azul/15 p-4 sm:p-5 ${promos.length % 2 === 0 ? "col-span-2 lg:col-span-1" : ""}`}>
           <div className="flex h-8 items-center">
             <span className="text-base font-bold">Pago Fácil y Rapipago</span>
@@ -142,6 +145,7 @@ export function PaymentPromosBlock({ promos }: { promos: PaymentPromo[] }) {
           </p>
           <p className="mt-2 text-xs italic text-gris-tinta">Te damos el código al terminar la compra</p>
         </li>
+        )}
       </ul>
     </section>
   );

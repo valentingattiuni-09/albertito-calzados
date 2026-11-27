@@ -24,7 +24,7 @@ Si no hay variables de Supabase, la tienda arranca en **modo demo** y usa el cat
 | Modo | Cómo | De dónde salen los datos |
 |---|---|---|
 | **Demo** (por defecto) | `DATA_SOURCE` vacío o `demo` | Como siempre: datos de demostración, o Supabase si está configurado. Sirve para diseñar. |
-| **Back office** | `DATA_SOURCE=backoffice` + `BACKOFFICE_API_URL` + `STORE_API_KEY` + `IMAGE_HOSTS` | La API del back office de Albertito (catálogo, precios, stock, categorías, configuración). Supabase no se usa. **Fase A: solo lectura**, las compras están apagadas. |
+| **Back office** | `DATA_SOURCE=backoffice` + `BACKOFFICE_API_URL` + `STORE_API_KEY` + `IMAGE_HOSTS` | La API del back office de Albertito (catálogo, precios, stock, categorías, configuración). Supabase no se usa. **Fase B:** la compra (pedido, pago con Payway o Mercado Pago, confirmación, seguimiento y arrepentimiento) va contra la API del back office. |
 
 ```bash
 # Modo back office contra la API local del back office (puerto 3002, fotos por http):
@@ -32,7 +32,7 @@ DATA_SOURCE=backoffice BACKOFFICE_API_URL=http://localhost:3002/api/v1 STORE_API
 IMAGE_HOSTS=http://localhost:3002 NEXT_PUBLIC_STORE_WHATSAPP=5492657000000 npm run dev
 ```
 
-Detalle, variables y qué queda apagado en cada fase: [docs/CONEXION-BACKOFFICE.md](docs/CONEXION-BACKOFFICE.md#modo-back-office-data_sourcebackoffice).
+Detalle, variables y cómo funciona la compra: [docs/CONEXION-BACKOFFICE.md](docs/CONEXION-BACKOFFICE.md#modo-back-office-data_sourcebackoffice).
 
 Tests de la lógica: `npm test` (corre `tests/*.test.mts` con `node --test`).
 

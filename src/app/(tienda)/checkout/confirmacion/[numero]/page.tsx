@@ -1,6 +1,8 @@
 import { PaymentLogo } from "@/components/ui/PaymentLogo";
+import { BoConfirmation } from "@/components/checkout/BoConfirmation";
 import { isBackoffice } from "@/lib/backoffice/source";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -25,8 +27,13 @@ const BRAND_LABEL: Record<string, string> = {
 const dateFmt = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Argentina/Buenos_Aires" });
 
 export default async function ConfirmationPage({ params, searchParams }: PageProps<"/checkout/confirmacion/[numero]">) {
-  // Fase A con el back office: no hay pedidos online todavía
-  if (isBackoffice()) notFound();
+  // Con el back office: el pedido sale de la API con el token de la cookie (nunca de la URL)
+  if (isBackoffice())
+    return (
+      <Suspense fallback={<p className="mx-auto max-w-3xl px-4 py-10 text-sm lg:px-6">Cargando tu pedido…</p>}>
+        <BoConfirmation numero={params.then((p) => p.numero)} />
+      </Suspense>
+    );
   const [{ numero }, sp, settings] = await Promise.all([params, searchParams, getSettings()]);
   const token = typeof sp.t === "string" ? sp.t : "";
   // Modo demo: si esta instancia no tiene el pedido en memoria, se usa el comprobante firmado

@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { noIndex, siteUrl as getSiteUrl } from "@/lib/site";
+import { RESUME_CAPTURE_SCRIPT } from "@/lib/backoffice/checkout-map";
+import { isBackoffice } from "@/lib/backoffice/source";
 
 // Fuentes de marca alojadas en el proyecto (Google Fonts, licencia OFL): no dependen de fonts.googleapis.com
 const poppins = localFont({
@@ -50,6 +52,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es-AR" className={`${poppins.variable} ${archivoBlack.variable} antialiased`}>
+      {isBackoffice() && (
+        <head>
+          {/* Link del mail de pago rechazado (#r=…): se guarda y se saca de la barra ANTES de que carguen GA4 y el Pixel (mandan la URL completa) */}
+          <script dangerouslySetInnerHTML={{ __html: RESUME_CAPTURE_SCRIPT }} />
+        </head>
+      )}
       <body className="flex min-h-dvh flex-col bg-blanco text-azul">{children}</body>
     </html>
   );

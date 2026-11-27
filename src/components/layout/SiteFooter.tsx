@@ -1,5 +1,6 @@
 import { PaymentLogo } from "@/components/ui/PaymentLogo";
 import { paymentLogo } from "@/lib/payment-logos";
+import { isBackoffice } from "@/lib/backoffice/source";
 import Image from "next/image";
 import Link from "next/link";
 import { ClockIcon, InstagramIcon, PinIcon, WhatsAppIcon } from "@/components/ui/icons";
@@ -174,8 +175,15 @@ export async function SiteFooter() {
                 ),
               )}
               <Mark label="Débito" />
-              <Mark label="Pago Fácil" />
-              <Mark label="Rapipago" />
+              {/* Con el back office no hay efectivo: tarjeta (Payway) y Mercado Pago */}
+              {isBackoffice() ? (
+                <Mark label="Mercado Pago" />
+              ) : (
+                <>
+                  <Mark label="Pago Fácil" />
+                  <Mark label="Rapipago" />
+                </>
+              )}
             </ul>
           </div>
           <div>

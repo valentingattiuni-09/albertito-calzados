@@ -28,23 +28,35 @@ Ya está hecho el **adaptador de lectura** (fase A): con `DATA_SOURCE=backoffice
 - **Build:** no necesita la API. Si no la alcanza (por ejemplo, al construir la imagen de Docker), compila con datos vacíos y la tienda se completa sola al arrancar.
 - **Supabase:** con `backoffice` no se usa en ningún lado (`hasSupabase` es siempre `false` y los clientes cortan antes de conectarse).
 
-### Qué queda apagado en la fase A (solo lectura)
+### Compra con el back office (fase B)
 
-| Qué | Cómo se ve |
+Con `DATA_SOURCE=backoffice` se compra contra la API de la tienda del back office (servidor a servidor: el navegador habla solo con esta web y la
+`STORE_API_KEY` nunca le llega). El modo demo sigue exactamente igual.
+
+| Qué | Cómo |
 |---|---|
-| Comprar | «Iniciar compra» deshabilitado en el carrito, con el aviso; `/checkout` muestra el aviso y el botón de WhatsApp. |
-| `POST /api/checkout`, `/api/checkout/pay`, `/api/coupon`, `/api/shipping/quote` | 503 `CHECKOUT_CLOSED` con el mensaje. |
-| Cotizador de envío (ficha y carrito) | No se muestra (en la ficha, el aviso). |
-| `/checkout/confirmacion/*` y «Seguí tu pedido» | 404 / mensaje (todavía no hay pedidos online). |
-| Panel `/admin` y `/api/admin/*` | 404 (el catálogo se administra en el back office). |
-| Webhook de Payway (`/api/webhooks/payway`) | 404 (los pagos los confirma el back office). |
-| Banners y videos del home, promos de cuotas, barra superior | Vacíos (llegan en la fase C). |
-| Newsletter | Mensaje «se habilita muy pronto» (fase C). |
-| Botón de arrepentimiento | Deriva al mail y al WhatsApp del local (pasa al back office en la fase B). |
+| Carrito | Se valida con `POST /store/variants/lookup` (precio y stock en vivo). |
+| Envío | `POST /api/shipping/quote` → `/store/shipping/quote` (Andreani, Correo Argentino, tarifa de respaldo y retiro). Sucursales con `POST /api/shipping/branches`: Correo Argentino pide la provincia. En la ficha se cotiza con el talle elegido. |
+| Pedido | Al pagar, `POST /api/checkout` crea el pedido (`/store/orders`) con una `Idempotency-Key` guardada en `sessionStorage`: un corte o una recarga repite el MISMO pedido. |
+| Token del pedido | En una cookie **httpOnly** por pedido (`alb_pedido_ALB-…`; Secure en producción, `SameSite=Lax` para volver de Mercado Pago, 30 días, las 5 más nuevas). Nunca va a la URL, al JavaScript del navegador ni a la analítica. |
+| Pago | Tarjeta: Payway por token (el navegador tokeniza con la clave pública; `NEXT_PUBLIC_PAYMENT_PROVIDER=mock` usa el simulado del back: tarjeta terminada en 0002 = rechazada, 0003 = pendiente). Mercado Pago: redirección. Cuotas desde `/store/payment-options` («1 pago» siempre; débito, solo 1). Reintento sobre el mismo pedido con `POST /api/checkout/pay` y la página `/checkout/pagar/ALB-…`. |
+| Confirmación | `/checkout/confirmacion/ALB-…` (sin `?t=`): lee el pedido con la cookie. Pendiente: consulta a los 2, 4, 8, 15 y 30 s y después «Actualizar». Muestra pagado, `en_revision`, rechazado (con «Probar de nuevo») y cancelado. Vacía el carrito cuando el pedido figura pagado o en revisión. |
+| Link del mail | El mail de pago rechazado trae `…/checkout/confirmacion/ALB-…#r=<firma>`. Un script del `<head>` guarda la firma y la saca de la barra ANTES de que carguen GA4 y el Pixel; la página la canjea en `POST /api/checkout/resume` (`/store/orders/:number/resume` con `X-Client-Ip`) por un token nuevo en la cookie. |
+| Analítica | `purchase` solo con el pedido pagado (no en revisión) y una sola vez por pedido (`localStorage` + `sessionStorage`). Sin mail, token ni DNI. |
+| Seguimiento | «Seguí tu pedido» (número + mail) muestra la vista reducida de `/store/orders/track` en la misma página. |
+| Arrepentimiento | `/store/withdrawals`: devuelve el código; el mail con el código lo manda el back office. |
+| Oculto con el back office | Efectivo (Pago Fácil / Rapipago, también en el pie, el home y la ficha), cupón y «Crear mi cuenta». El webhook de Payway de esta web sigue en 404 (los pagos los confirma el back office). |
+
+Mensajes de error de la API → `src/lib/backoffice/checkout-map.ts` (`errorAction`), en voseo, con la acción que corresponde (volver al paso, resincronizar el
+carrito, recargar las cuotas, armar el pedido de nuevo).
+
+Variables nuevas (navegador, públicas): `NEXT_PUBLIC_PAYWAY_SDK_URL` y `NEXT_PUBLIC_PAYWAY_API_URL` para el SDK de Payway con `NEXT_PUBLIC_PAYMENT_PROVIDER=payway`
+(**a confirmar** con la documentación del contrato: URL y forma del SDK, nombres de los campos y huella del dispositivo).
+
+Pendiente de contenido: las páginas «Cómo comprar» y las preguntas frecuentes todavía mencionan el pago en efectivo.
 
 ### Lo que viene
 
-- **Fase B (compra):** pedidos de invitado en el back office, cobro con Payway (formulario alojado si Payway lo ofrece) y Mercado Pago, confirmación solo por webhook, cotización real de Andreani y Correo Argentino (con respaldo por zona y retiro en el local), arrepentimiento y seguimiento en el back office, mails del pedido.
 - **Fase C:** banners, videos, promos de cuotas, barra superior, newsletter y cupones desde el back office; alta y seguimiento de envíos; el back office avisa a `/api/revalidate` cuando cambia algo.
 
 ## Las 3 conexiones

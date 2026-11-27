@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState } from "react";
 import { trackOrder, type TrackState } from "@/app/actions/track-order";
+import { formatPrice } from "@/lib/format";
 
 const input = "h-12 w-full rounded-md border border-azul/30 bg-blanco px-3 text-base text-azul";
 
@@ -38,6 +39,21 @@ export function TrackOrderForm() {
       <button type="submit" disabled={pending} className="h-12 w-full rounded-md bg-rojo text-base font-bold uppercase text-blanco disabled:opacity-60">
         {pending ? "Buscando…" : "Ver mi pedido"}
       </button>
+      {state?.ok && (
+        <section aria-label={`Pedido ${state.order.number}`} className="rounded-md border border-azul/15 p-4 text-sm">
+          <p className="text-base font-bold">Pedido {state.order.number}</p>
+          <p className="mt-1 font-semibold">{state.order.label}</p>
+          <ul className="mt-2 space-y-0.5">
+            {state.order.items.map((i) => (
+              <li key={i}>{i}</li>
+            ))}
+          </ul>
+          <p className="mt-2">
+            {state.order.delivery} · Total {formatPrice(state.order.total)}
+          </p>
+          {state.order.tracking && <p className="mt-1">{state.order.tracking}</p>}
+        </section>
+      )}
     </form>
   );
 }

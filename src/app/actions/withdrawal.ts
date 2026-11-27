@@ -2,6 +2,8 @@
 
 import { randomInt } from "node:crypto";
 import { isBackoffice } from "@/lib/backoffice/source";
+import { boWithdraw } from "@/lib/backoffice/checkout";
+import { errorAction } from "@/lib/backoffice/checkout-map";
 import { getSettings } from "@/lib/data/layout";
 import { sendWithdrawalConfirmation } from "@/lib/email";
 import { hasSupabase, serviceClient } from "@/lib/supabase/clients";
@@ -27,11 +29,17 @@ export async function requestWithdrawal(_prev: WithdrawalState, f: FormData): Pr
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email)) return { ok: false, message: "Revisá tu mail.", field: "email" };
   if (data.orderNumber && !/^ALB-\d{6}$/.test(data.orderNumber)) return { ok: false, message: "El número de pedido es como ALB-001234.", field: "orderNumber" };
 
-  // Fase A con el back office: la solicitud todavía no se guarda en el back office (llega en la fase B). Se deriva al local, sin perderla.
+  // Con el back office: la solicitud se registra allá (siempre, aunque el número no coincida) y el mail con el código lo manda el back office
   if (isBackoffice()) {
-    const { store, whatsapp } = await getSettings();
-    const contact = [store.email && `a ${store.email}`, whatsapp.display && `por WhatsApp al ${whatsapp.display}`].filter(Boolean).join(" o ");
-    return { ok: false, message: `Por ahora pedí la revocación ${contact || "en el local"}: te respondemos en el día y te damos tu código de trámite.` };
+    try {
+      const res = await boWithdraw(data);
+      if (res.status === 201 || res.status === 200) return { ok: true, code: res.body.code };
+      return { ok: false, message: res.status === 400 ? "Revisá los datos e intentá de nuevo." : errorAction(res.body, res.status).message };
+    } catch {
+      const { store, whatsapp } = await getSettings();
+      const contact = [store.email && `a ${store.email}`, whatsapp.display && `por WhatsApp al ${whatsapp.display}`].filter(Boolean).join(" o ");
+      return { ok: false, message: `No pudimos registrar la solicitud. Probá de nuevo en unos minutos o pedí la revocación ${contact || "en el local"}.` };
+    }
   }
 
   const code = `ARR-${new Date().getFullYear()}-${String(randomInt(0, 1_000_000)).padStart(6, "0")}`;

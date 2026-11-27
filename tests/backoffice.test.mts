@@ -184,13 +184,13 @@ describe("cliente del back office", () => {
   });
 });
 
-describe("checkout bloqueado en la fase A", () => {
-  it("503 con el mensaje, sin caché", async () => {
+describe("checkout: desde la fase B también con el back office", () => {
+  it("se puede comprar en los dos modos; la respuesta de «cerrado» queda para lo que sigue apagado", async () => {
+    assert.equal(checkoutEnabled(true), true);
+    assert.equal(checkoutEnabled(false), true);
     const res = checkoutClosedResponse();
     assert.equal(res.status, 503);
     assert.equal(res.headers.get("Cache-Control"), "no-store");
     assert.deepEqual(await res.json(), { ok: false, code: "CHECKOUT_CLOSED", message: CHECKOUT_CLOSED_MESSAGE });
-    assert.equal(checkoutEnabled(true), false);
-    assert.equal(checkoutEnabled(false), true);
   });
 });

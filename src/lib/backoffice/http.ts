@@ -90,5 +90,29 @@ export function createBackofficeHttp(opts: HttpOptions) {
     return (await attempt("POST", path, body)) as T;
   }
 
-  return { get, post, /** solo para tests */ _lastGood: lastGood };
+  /**
+   * Escritura del checkout: un solo intento y devuelve el estado y el cuerpo TAL CUAL (los 4xx traen el código de error que la web traduce).
+   * Solo un corte de red o un tiempo agotado tiran BackofficeUnavailableError. `headers` lleva Idempotency-Key, X-Order-Token o X-Client-Ip.
+   */
+  async function send<T>(method: "GET" | "POST", path: string, body?: unknown, headers: Record<string, string> = {}, timeoutMs = opts.timeoutMs): Promise<{ status: number; body: T }> {
+    const signal = AbortSignal.timeout(timeoutMs);
+    let res: Response;
+    try {
+      res = await doFetch(`${base}${path}`, {
+        method,
+        headers: { "X-Store-Key": opts.apiKey, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}), ...headers },
+        body: body ? JSON.stringify(body) : undefined,
+        signal,
+        cache: "no-store",
+      });
+    } catch (e) {
+      const timedOut = (e as Error)?.name === "TimeoutError" || signal.aborted;
+      throw new BackofficeUnavailableError(timedOut ? `sin respuesta en ${timeoutMs} ms (${path.split("?")[0]})` : `sin conexión (${path.split("?")[0]})`);
+    }
+    const data = (await res.json().catch(() => ({}))) as T;
+    if (res.status === 401 || res.status === 403) log(`la API respondió ${res.status} (${path.split("?")[0]}): revisá STORE_API_KEY`);
+    return { status: res.status, body: data };
+  }
+
+  return { get, post, send, /** solo para tests */ _lastGood: lastGood };
 }

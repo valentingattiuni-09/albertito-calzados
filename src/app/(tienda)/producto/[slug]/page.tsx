@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { isBackoffice } from "@/lib/backoffice/source";
-import { CHECKOUT_CLOSED_MESSAGE } from "@/lib/backoffice/guard";
+import { CHECKOUT_CLOSED_MESSAGE, checkoutEnabled } from "@/lib/backoffice/guard";
 import { notFound } from "next/navigation";
 import { Breadcrumb, type Crumb } from "@/components/catalog/Breadcrumb";
 import { ActiveSection } from "@/components/layout/ActiveSection";
@@ -99,7 +99,8 @@ export default async function ProductPage({ params, searchParams }: PageProps<"/
           taxFactor={settings.tax.factor}
           kids={section?.slug === "ninos"}
           storeAddress={`${settings.store.address}, ${settings.store.city}`}
-          checkoutClosed={isBackoffice() ? CHECKOUT_CLOSED_MESSAGE : undefined}
+          checkoutClosed={checkoutEnabled(isBackoffice()) ? undefined : CHECKOUT_CLOSED_MESSAGE}
+          cashAvailable={!isBackoffice()}
         />
       </div>
 

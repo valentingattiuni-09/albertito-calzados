@@ -1,6 +1,6 @@
 /**
- * FASE A (solo lectura): con DATA_SOURCE=backoffice las compras están apagadas hasta la fase B,
- * para que nadie pueda comprar contra pedidos de prueba en memoria.
+ * Fase A (solo lectura) apagaba las compras con DATA_SOURCE=backoffice. Desde la fase B se compra contra la API de la tienda: el mensaje y la respuesta
+ * quedan para lo que sigue apagado (cupones, hasta la fase C).
  */
 export const CHECKOUT_CLOSED_MESSAGE = "Las compras online se habilitan muy pronto. Mientras tanto, escribinos por WhatsApp y te ayudamos con tu pedido.";
 
@@ -12,5 +12,11 @@ export function checkoutClosedResponse(): Response {
   });
 }
 
-/** true = se puede comprar. Con el back office, recién en la fase B. */
-export const checkoutEnabled = (backoffice: boolean) => !backoffice;
+/** true = se puede comprar. Desde la fase B, también con el back office. */
+export function checkoutEnabled(backoffice: boolean): boolean {
+  void backoffice;
+  return true;
+}
+
+/** Cupones: con el back office llegan en la fase C */
+export const COUPONS_CLOSED_MESSAGE = "Los cupones todavía no están disponibles.";

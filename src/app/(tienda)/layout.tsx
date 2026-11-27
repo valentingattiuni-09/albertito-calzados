@@ -9,7 +9,7 @@ import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
 import { getPaymentPromos, getSettings } from "@/lib/data/layout";
 import { hasSupabase } from "@/lib/supabase/clients";
 import { isBackoffice } from "@/lib/backoffice/source";
-import { CHECKOUT_CLOSED_MESSAGE } from "@/lib/backoffice/guard";
+import { CHECKOUT_CLOSED_MESSAGE, checkoutEnabled } from "@/lib/backoffice/guard";
 import { getNavigation } from "@/lib/data/layout";
 import { StoreUnavailable } from "@/components/layout/StoreUnavailable";
 
@@ -39,14 +39,9 @@ export default async function TiendaLayout({ children }: LayoutProps<"/">) {
       >
         Saltar al contenido
       </a>
-      {backoffice ? (
-        <p className="bg-blanco px-4 py-1.5 text-center text-xs font-medium text-azul">Catálogo real. Las compras online todavía no están habilitadas.</p>
-      ) : (
-        !hasSupabase && (
-          <p className="bg-blanco px-4 py-1.5 text-center text-xs font-medium text-azul">
-            Versión de prueba: los pagos y los envíos son simulados. No se cobra nada.
-          </p>
-        )
+      {/* Con el back office (fase B) se compra de verdad: sin aviso. En el modo demo sin Supabase, el aviso de siempre. */}
+      {!backoffice && !hasSupabase && (
+        <p className="bg-blanco px-4 py-1.5 text-center text-xs font-medium text-azul">Versión de prueba: los pagos y los envíos son simulados. No se cobra nada.</p>
       )}
       <SiteHeader />
       <main id="contenido" className="flex-1">
@@ -56,7 +51,7 @@ export default async function TiendaLayout({ children }: LayoutProps<"/">) {
       <WhatsAppFab />
       <AnalyticsScripts />
       <Suspense fallback={null}>
-        <CartDrawer promos={promos} checkoutClosed={backoffice ? CHECKOUT_CLOSED_MESSAGE : undefined} />
+        <CartDrawer promos={promos} checkoutClosed={checkoutEnabled(backoffice) ? undefined : CHECKOUT_CLOSED_MESSAGE} />
         {newsletterPopup.enabled && (
           <NewsletterPopup title={newsletterPopup.title} text={newsletterPopup.text} delaySeconds={newsletterPopup.delaySeconds} />
         )}
