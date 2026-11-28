@@ -3,6 +3,9 @@ import { cacheLife, cacheTag } from "next/cache";
 import { demoDb, withinDates } from "@/lib/demo/db";
 import { safeMediaUrl } from "@/lib/media";
 import { hasSupabase, publicClient } from "@/lib/supabase/clients";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { orEmptyDuringBuild } from "@/lib/backoffice/build";
+import { boHomeBanners } from "@/lib/backoffice/store";
 import { getCatalog } from "./catalog";
 import { TAGS } from "./tags";
 import type { ProductCard } from "./types";
@@ -33,6 +36,8 @@ export async function getHomeBanners(): Promise<HomeBanner[]> {
   cacheTag(TAGS.home);
   cacheLife("minutes");
 
+  // Back office (fase C): los banners vigentes de la API
+  if (isBackoffice()) return orEmptyDuringBuild(boHomeBanners, [], "banners");
   if (!hasSupabase) {
     return demoDb()
       .banners.filter((b) => b.active && withinDates(b.startsAt, b.endsAt))
@@ -70,6 +75,8 @@ export async function getHomeVideos(): Promise<HomeVideo[]> {
   cacheTag(TAGS.home, TAGS.products);
   cacheLife("minutes");
 
+  // Back office: videos del home en la fase C
+  if (isBackoffice()) return [];
   const catalog = await getCatalog();
   const pick = (p: ProductCard | undefined) =>
     p ? { name: p.name, slug: p.slug, price: p.price, basePrice: p.basePrice, onSale: p.onSale } : null;

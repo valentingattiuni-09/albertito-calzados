@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { createAndPay } from "@/lib/backoffice/checkout-routes";
 import { signReceipt } from "@/lib/orders/demo-receipt";
 import { hasSupabase } from "@/lib/supabase/clients";
 import { getLiveVariants } from "@/lib/orders/live";
@@ -28,6 +30,8 @@ const bad = (message: string, field?: string) => NextResponse.json({ ok: false, 
  * Respuesta: { ok, number, accessToken, paymentStatus, message }
  */
 export async function POST(req: NextRequest) {
+  // Con el back office: el pedido y el pago los hace la API de la tienda (precios, envío, cuotas y cobro se calculan allá)
+  if (isBackoffice()) return createAndPay(await req.json().catch(() => null));
   const body = (await req.json().catch(() => null)) as Body | null;
   if (!body) return bad("Pedido inválido.");
 

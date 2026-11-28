@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { payWithCookie, type PaymentBody } from "@/lib/backoffice/checkout-routes";
 import { signReceipt } from "@/lib/orders/demo-receipt";
 import { hasSupabase } from "@/lib/supabase/clients";
 import { getOrder } from "@/lib/orders/orders";
@@ -6,6 +8,11 @@ import { payOrder, type PaymentInput } from "@/lib/orders/pay";
 
 /** Reintento de pago de un pedido rechazado (mismo pedido, otra tarjeta). */
 export async function POST(req: NextRequest) {
+  // Con el back office: reintento sobre el mismo pedido; el token del pedido está en la cookie (nunca lo manda el navegador)
+  if (isBackoffice()) {
+    const b = (await req.json().catch(() => null)) as { number?: string; payment?: PaymentBody } | null;
+    return payWithCookie(String(b?.number ?? "").toUpperCase(), b?.payment);
+  }
   const body = (await req.json().catch(() => null)) as { number?: string; accessToken?: string; payment?: PaymentInput } | null;
   const order = body?.number && body.accessToken ? await getOrder(body.number, body.accessToken) : null;
   if (!order) return NextResponse.json({ ok: false, message: "No encontramos el pedido." }, { status: 404 });

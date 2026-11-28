@@ -75,3 +75,79 @@ export async function tokenizeCard(c: CardInput): Promise<CardToken> {
 
   throw new Error(`Proveedor de pago desconocido: ${PROVIDER}`);
 }
+
+// ---------- Con el back office (DATA_SOURCE=backoffice) ----------
+
+type DecidirSdk = {
+  setPublishableKey(key: string): void;
+  setTimeout(ms: number): void;
+  createToken(form: HTMLFormElement, cb: (status: number, response: { id?: string; bin?: string; error?: unknown }) => void): void;
+};
+declare global {
+  interface Window {
+    Decidir?: new (url: string, inhabilitarCS?: boolean) => DecidirSdk;
+  }
+}
+
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[data-payway-sdk="${src}"]`)) return resolve();
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    s.dataset.paywaySdk = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("No pudimos cargar el formulario de pago. Revisá tu conexión."));
+    document.head.appendChild(s);
+  });
+}
+
+/**
+ * Tokeniza la tarjeta para el back office. El número, el vencimiento y el código NUNCA salen del navegador: se convierten en un token de un solo uso.
+ *  - mock (NEXT_PUBLIC_PAYMENT_PROVIDER=mock, con el back en PAYWAY_PROVIDER=mock): token del simulado del back
+ *    (tarjeta terminada en 0002 = rechazada, 0003 = pendiente, otra = aprobada).
+ *  - payway: SDK de Payway (ex Decidir) con la clave PÚBLICA que da la API. A CONFIRMAR con la documentación del contrato: la URL del SDK
+ *    (NEXT_PUBLIC_PAYWAY_SDK_URL), la del entorno (NEXT_PUBLIC_PAYWAY_API_URL), los nombres de los campos `data-decidir` y si hace falta la huella del dispositivo.
+ */
+export async function tokenizeForBackoffice(c: CardInput, publicKey: string | null): Promise<CardToken> {
+  const num = c.number.replace(/\D/g, "");
+  const bin = num.slice(0, 6);
+  const last4 = num.slice(-4);
+  if (PROVIDER === "mock") {
+    const { mockPaywayToken } = await import("@/lib/backoffice/checkout-map");
+    return { token: mockPaywayToken(num, crypto.randomUUID()), bin, last4 };
+  }
+  if (PROVIDER !== "payway") throw new Error(`Proveedor de pago desconocido: ${PROVIDER}`);
+  const sdkUrl = process.env.NEXT_PUBLIC_PAYWAY_SDK_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_PAYWAY_API_URL;
+  if (!sdkUrl || !apiUrl || !publicKey) throw new Error("El pago con tarjeta no está disponible ahora. Probá con Mercado Pago.");
+  await loadScript(sdkUrl);
+  if (!window.Decidir) throw new Error("No pudimos cargar el formulario de pago. Probá de nuevo.");
+  const sdk = new window.Decidir(apiUrl, true);
+  sdk.setPublishableKey(publicKey);
+  sdk.setTimeout(15_000);
+  // Formulario efímero con los atributos que lee el SDK: se arma, se tokeniza y se borra (nunca se envía)
+  const form = document.createElement("form");
+  form.hidden = true;
+  const field = (name: string, value: string) => {
+    const i = document.createElement("input");
+    i.setAttribute("data-decidir", name);
+    i.value = value;
+    form.appendChild(i);
+  };
+  field("card_number", num);
+  field("security_code", c.cvv);
+  field("card_expiration_month", c.expMonth.padStart(2, "0"));
+  field("card_expiration_year", c.expYear.slice(-2));
+  field("card_holder_name", c.holderName.trim());
+  field("card_holder_doc_type", "dni");
+  field("card_holder_doc_number", c.holderDni.replace(/\D/g, ""));
+  document.body.appendChild(form);
+  try {
+    return await new Promise<CardToken>((resolve, reject) =>
+      sdk.createToken(form, (status, res) => (status === 200 || status === 201) && res.id ? resolve({ token: res.id, bin: res.bin ?? bin, last4 }) : reject(new Error("Revisá los datos de la tarjeta."))),
+    );
+  } finally {
+    form.remove();
+  }
+}

@@ -5,7 +5,9 @@ import { getNavigation } from "@/lib/data/layout";
 
 export async function generateStaticParams() {
   const sections = await getNavigation();
-  return sections.flatMap((s) => s.children.map((c) => ({ seccion: s.slug, subseccion: c.slug })));
+  const params = sections.flatMap((s) => s.children.map((c) => ({ seccion: s.slug, subseccion: c.slug })));
+  // Cache Components exige al menos un resultado: si todavía no hay datos (o el build corrió sin la API del back office), un valor de relleno que da 404
+  return params.length ? params : [{ seccion: "_sin-datos", subseccion: "_sin-datos" }];
 }
 
 async function find(seccion: string, subseccion: string) {

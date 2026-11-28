@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isBackoffice } from "@/lib/backoffice/source";
 import { getOrderByNumberUnsafe, recordPayment } from "@/lib/orders/orders";
 import { cardProvider } from "@/lib/payments";
 
@@ -7,6 +8,8 @@ import { cardProvider } from "@/lib/payments";
  * el estado se vuelve a consultar antes de registrarlo. Responde 200 para que no reintente.
  */
 export async function POST(req: NextRequest) {
+  // Con el back office, los pagos los confirma el back office (su propio webhook): este no existe
+  if (isBackoffice()) return NextResponse.json({ ok: false }, { status: 404 });
   const provider = cardProvider();
   const note = await provider.parseNotification(req).catch((e) => {
     console.error("[webhook pago]", e);

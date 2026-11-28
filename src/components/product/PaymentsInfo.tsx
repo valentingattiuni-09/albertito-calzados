@@ -7,7 +7,7 @@ import { formatPrice } from "@/lib/format";
 import { installmentOptions } from "@/lib/pricing";
 
 /** Cuotas en la ficha: "Hasta 5 cuotas sin interés", lista de opciones y modal con todos los medios de pago. */
-export function PaymentsInfo({ price, promos }: { price: number; promos: PaymentPromo[] }) {
+export function PaymentsInfo({ price, promos, cash = true }: { price: number; promos: PaymentPromo[]; cash?: boolean }) {
   const options = installmentOptions(price, promos);
   if (options.length === 0) return null;
   const max = options[0];
@@ -48,13 +48,15 @@ export function PaymentsInfo({ price, promos }: { price: number; promos: Payment
             </li>
           ))}
           <li className="py-3 text-sm">También podés pagar con débito o en 1 pago con crédito.</li>
+          {cash && (
           <li className="flex items-center justify-between gap-4 py-3">
-            <div>
-              <p className="font-semibold">Efectivo</p>
-              <p className="text-xs text-gris-tinta">En Pago Fácil o Rapipago, con el código que te damos al comprar</p>
-            </div>
-            <p className="text-right text-sm font-bold">1 pago</p>
-          </li>
+              <div>
+                <p className="font-semibold">Efectivo</p>
+                <p className="text-xs text-gris-tinta">En Pago Fácil o Rapipago, con el código que te damos al comprar</p>
+              </div>
+              <p className="text-right text-sm font-bold">1 pago</p>
+            </li>
+          )}
         </ul>
       </Modal>
     </div>

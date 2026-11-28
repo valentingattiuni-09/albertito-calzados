@@ -5,6 +5,9 @@ import { demoDb, demoSaleActive, type DbProduct } from "@/lib/demo/db";
 import { safeMediaUrl } from "@/lib/media";
 import { normalize, termScore, tokens } from "@/lib/search/normalize";
 import { hasSupabase, publicClient } from "@/lib/supabase/clients";
+import { isBackoffice } from "@/lib/backoffice/source";
+import { boCatalog, boProduct } from "@/lib/backoffice/store";
+import { orEmptyDuringBuild } from "@/lib/backoffice/build";
 import { getNavigation } from "./layout";
 import { TAGS } from "./tags";
 import type { ColorSummary, ProductCard, ProductDetail, ProductLine } from "./types";
@@ -106,6 +109,7 @@ export async function getCatalog(): Promise<ProductCard[]> {
   cacheTag(TAGS.products);
   cacheLife("minutes");
 
+  if (isBackoffice()) return orEmptyDuringBuild(async () => boCatalog(await getNavigation()), [], "catálogo");
   if (!hasSupabase) return demoDb().products.filter((p) => p.active).map(demoCard);
 
   const names = await categoryNames();
@@ -128,6 +132,9 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   "use cache";
   cacheTag(TAGS.products, TAGS.product(slug));
   cacheLife("minutes");
+
+  // Back office: la ficha viene entera de la API (las mismas reglas de visibilidad que el catálogo)
+  if (isBackoffice()) return orEmptyDuringBuild(async () => boProduct(slug, await getNavigation()), null, `producto ${slug}`);
 
   const card = (await getCatalog()).find((p) => p.slug === slug);
   if (!card) return null;
@@ -216,6 +223,7 @@ export async function searchProducts(q: string, limit = 200): Promise<ProductCar
   if (normalize(query).length < 2) return [];
   const catalog = await getCatalog();
 
+  // Modo demo y back office: búsqueda en memoria con sinónimos (con el back office, hasSupabase es siempre false)
   if (!hasSupabase) return demoSearch(query, catalog).slice(0, limit);
 
   const { data, error } = await publicClient().rpc("search_products", { q: query, max_results: limit });

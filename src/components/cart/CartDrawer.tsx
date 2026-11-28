@@ -45,7 +45,8 @@ export async function syncCart(items: CartItem[]): Promise<{ notices: string[]; 
  * Carrito lateral: se abre al agregar un par (o tocando el ícono), sin salir de la página.
  * Valida stock al abrirse, cotiza el envío y muestra total y cuotas sin interés.
  */
-export function CartDrawer({ promos }: { promos: PaymentPromo[] }) {
+/** `checkoutClosed`: fase A con el back office, las compras online todavía no están habilitadas (aviso en lugar del botón). */
+export function CartDrawer({ promos, checkoutClosed }: { promos: PaymentPromo[]; checkoutClosed?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
   const items = useCartItems();
   const prefs = useShippingPrefs();
@@ -176,9 +177,12 @@ export function CartDrawer({ promos }: { promos: PaymentPromo[] }) {
                 ))}
               </ul>
 
-              <div className="mt-4">
-                <ShippingQuoter request={{ items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })) }} selectable onQuote={setQuote} />
-              </div>
+              {/* Con las compras cerradas (fase A con el back office) no se cotiza envío */}
+              {!checkoutClosed && (
+                <div className="mt-4">
+                  <ShippingQuoter request={{ items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })) }} selectable onQuote={setQuote} />
+                </div>
+              )}
             </div>
 
             <div className="border-t border-azul/15 px-5 py-4 [padding-bottom:max(1rem,env(safe-area-inset-bottom))]">
@@ -187,16 +191,18 @@ export function CartDrawer({ promos }: { promos: PaymentPromo[] }) {
                   <dt>Subtotal</dt>
                   <dd className="font-semibold">{formatPrice(subtotal)}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt>Envío</dt>
-                  <dd className="font-semibold">
-                    {option ? (
-                      option.price === 0 ? "Gratis" : formatPrice(option.price)
-                    ) : (
-                      <span className="font-normal text-gris-tinta">{quote ? "Elegí una opción" : "Ingresá tu código postal"}</span>
-                    )}
-                  </dd>
-                </div>
+                {!checkoutClosed && (
+                  <div className="flex justify-between">
+                    <dt>Envío</dt>
+                    <dd className="font-semibold">
+                      {option ? (
+                        option.price === 0 ? "Gratis" : formatPrice(option.price)
+                      ) : (
+                        <span className="font-normal text-gris-tinta">{quote ? "Elegí una opción" : "Ingresá tu código postal"}</span>
+                      )}
+                    </dd>
+                  </div>
+                )}
                 <div className="flex items-baseline justify-between pt-1 text-base">
                   <dt className="font-bold uppercase">Total</dt>
                   <dd className="text-xl font-bold">{formatPrice(total)}</dd>
@@ -210,12 +216,28 @@ export function CartDrawer({ promos }: { promos: PaymentPromo[] }) {
                   </p>
                 )}
               </dl>
-              <Link
-                href="/checkout"
-                className="mt-4 flex h-14 items-center justify-center rounded-md bg-rojo text-base font-bold uppercase tracking-wide text-blanco hover:opacity-90"
-              >
-                Iniciar compra
-              </Link>
+              {checkoutClosed ? (
+                <>
+                  <button
+                    type="button"
+                    disabled
+                    aria-describedby="checkout-closed"
+                    className="mt-4 flex h-14 w-full cursor-not-allowed items-center justify-center rounded-md bg-rojo text-base font-bold uppercase tracking-wide text-blanco opacity-50"
+                  >
+                    Iniciar compra
+                  </button>
+                  <p id="checkout-closed" role="note" className="mt-2 rounded-md bg-azul/5 p-3 text-sm font-medium">
+                    {checkoutClosed}
+                  </p>
+                </>
+              ) : (
+                <Link
+                  href="/checkout"
+                  className="mt-4 flex h-14 items-center justify-center rounded-md bg-rojo text-base font-bold uppercase tracking-wide text-blanco hover:opacity-90"
+                >
+                  Iniciar compra
+                </Link>
+              )}
               <button type="button" onClick={close} className="mt-2 flex min-h-11 w-full items-center justify-center text-sm font-semibold underline underline-offset-4">
                 Seguir comprando
               </button>
